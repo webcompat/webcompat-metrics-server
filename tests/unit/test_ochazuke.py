@@ -1,6 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+"""Main testing module for Webcompat Metrics Server."""
 import unittest
 
-import ochazuke
+from ochazuke import create_app
 
 
 class OchazukeTestCase(unittest.TestCase):
@@ -8,11 +14,12 @@ class OchazukeTestCase(unittest.TestCase):
 
     def setUp(self):
         """Set up tests."""
-        self.app = ochazuke.app.test_client()
+        self.app = create_app(test_config={})
+        self.client = self.app.test_client()
 
     def test_index(self):
         """Test the index page."""
-        rv = self.app.get('/')
+        rv = self.client.get('/')
         self.assertIn('Welcome to ochazuke', rv.data.decode())
 
 
