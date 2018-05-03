@@ -1,1 +1,1 @@
-web: gunicorn ochazuke:create_app
+web: gunicorn ochazuke:app

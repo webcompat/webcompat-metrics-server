@@ -39,3 +39,5 @@ def create_app(test_config=None):
         return 'Welcome to ochazuke'
 
     return app
+
+app = create_app()
