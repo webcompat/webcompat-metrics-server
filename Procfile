@@ -1,1 +1,1 @@
-web: gunicorn ochazuke.wsgi
+web: gunicorn ochazuke:create_app
