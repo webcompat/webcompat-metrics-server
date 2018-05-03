@@ -1,4 +1,9 @@
-Ochazuke is the server part for the webcompat metrics project. A [webcompat metrics client](https://github.com/webcompat/webcompat-metrics-client/) is being developed in parallel. 
+# Ochazuke
+
+Ochazuke is the server part for the webcompat metrics project. A [webcompat metrics client](https://github.com/webcompat/webcompat-metrics-client/) is being developed in parallel.
+
+## Prerequisites
+This is built to be used with Python 3.
 
 ## Objectives
 * [ ] [First prototype](https://github.com/mozilla/webcompat-team-okrs/issues/1) by the end of 2018Q2
