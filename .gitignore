@@ -7,17 +7,10 @@ settings.cfg
 __pycache__/
 *.py[cod]
 
-# Distribution / packaging
-env/
-dist/
-downloads/
-
 # Flask stuff:
 instance/
 .webassets-cache
 
-
 # virtualenv
 .venv
 venv/
-ENV/
