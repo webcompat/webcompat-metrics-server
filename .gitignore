@@ -1,3 +1,7 @@
 # General things to ignore
 .DS_Store
 *.pyc
+*.egg-info/
+dist/
+settings.cfg
+*.log*
