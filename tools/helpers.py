@@ -20,12 +20,17 @@ def get_remote_data(url):
 
 
 def newtime(timestamp):
-    """convert from local to UTC.
+    """Convert from local to UTC.
 
     To be generic whichever server this ends up, we compute the real UTC offset.
     """
     local_time = datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S")
-    UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
-    new_time = local_time + UTC_OFFSET_TIMEDELTA
+    new_time = local_time + compute_utc_offset()
     utc_time = new_time.strftime("%Y-%m-%dT%H:%M:%SZ")
     return utc_time
+
+
+def compute_utc_offset():
+    """Compute the current offset in between UTC and local time."""
+    return datetime.datetime.utcnow() - datetime.datetime.now()
+
