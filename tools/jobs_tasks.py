@@ -28,8 +28,8 @@ def update_timeline(cat_id):
     if last_total != live_total:
         # write data into txt_file or json_file
         now = newtime(datetime.datetime.now().isoformat(timespec='seconds'))
-        commit_last_total(now, live_total, cat_id)
-        add_live_data(time)
+        # TODO: commit_last_total(now, live_total, cat_id)
+        # TODO: add_live_data(time)
         return True
     return False
 
@@ -63,7 +63,3 @@ def commit_last_total(now, live_total, cat_id):
     """Write a timestamp in a file"""
     with open(LAST_PATH.format(cat_id=cat_id, path=DATA_PATH), 'r+') as f:
         f.write('{now} {live_total}'.format(now=now, live_total=live_total))
-
-def add_live_data(now, live_total, cat_id):
-    """Add the latest data to a file."""
-    pass

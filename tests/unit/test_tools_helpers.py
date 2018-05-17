@@ -28,6 +28,5 @@ class ToolsHelpersTestCase(unittest.TestCase):
         self.assertEqual(expected, actual)
 
 
-
 if __name__ == '__main__':
     unittest.main()

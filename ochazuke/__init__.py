@@ -16,9 +16,8 @@ def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY='dev'
-        # DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
-    )
+        SECRET_KEY='dev',
+        )
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
@@ -36,6 +35,7 @@ def create_app(test_config=None):
     # A route for starting
     @app.route('/')
     def index():
+        """Home page of the site"""
         return 'Welcome to ochazuke'
 
     return app
