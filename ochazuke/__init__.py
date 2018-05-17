@@ -9,6 +9,9 @@
 import os
 
 from flask import Flask
+from flask import Response
+
+from tools.helpers import get_remote_data
 
 
 def create_app(test_config=None):
@@ -38,6 +41,19 @@ def create_app(test_config=None):
         """Home page of the site"""
         return 'Welcome to ochazuke'
 
+    @app.route('/data/needsdiagnosis-timeline')
+    def needsdiagnosis_data():
+        """Dumb pipeline for returning the JSON."""
+        # TODO: Change this to a local file.
+        json_data = get_remote_data(
+            'http://www.la-grange.net/tmp/needsdiagnosis-timeline.json')
+        response = Response(
+            response=json_data,
+            status=200,
+            mimetype='application/json')
+        return response
+
     return app
+
 
 app = create_app()
