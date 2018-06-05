@@ -7,6 +7,7 @@
 import unittest
 
 from ochazuke import create_app
+from ochazuke import helpers
 
 
 class OchazukeTestCase(unittest.TestCase):
@@ -30,6 +31,26 @@ class OchazukeTestCase(unittest.TestCase):
             rv.data.decode())
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(rv.mimetype, 'application/json')
+
+    def test_date_range(self):
+        """Given from_date and to_date, return a number of days."""
+        from_date = '2018-01-02'
+        to_date = '2018-01-04'
+        days = ['2018-01-02', '2018-01-03']
+        self.assertCountEqual(helpers.get_days(from_date, to_date), days)
+        self.assertCountEqual(helpers.get_days(to_date, from_date), days)
+
+    def test_date_range_invalid(self):
+        """Given from_date and to_date, return a number of days."""
+        from_date = '2018-01-02T23:00'
+        to_date = '2018-01-04'
+        self.assertEqual(helpers.get_days(from_date, to_date), None)
+
+    def test_date_range_same_day(self):
+        """Given from_date and to_date, return a number of days."""
+        from_date = '2018-01-02'
+        to_date = '2018-01-02'
+        self.assertEqual(helpers.get_days(from_date, to_date), ['2018-01-02'])
 
 
 if __name__ == '__main__':
