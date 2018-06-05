@@ -52,6 +52,24 @@ class OchazukeTestCase(unittest.TestCase):
         to_date = '2018-01-02'
         self.assertEqual(helpers.get_days(from_date, to_date), ['2018-01-02'])
 
+    def test_get_timeline_slice(self):
+        """Given a list of dates, return the appropriate slice of data."""
+        dates_list = ['2018-05-16', '2018-05-17']
+        full_list = [
+            {"count": "485", "timestamp": "2018-05-15T00:00:00Z"},
+            {"count": "485", "timestamp": "2018-05-16T01:00:00Z"},
+            {"count": "485", "timestamp": "2018-05-17T01:00:00Z"},
+            {"count": "485", "timestamp": "2018-05-18T02:00:00Z"},
+            ]
+        sliced_list = [
+            {"count": "485", "timestamp": "2018-05-16T01:00:00Z"},
+            {"count": "485", "timestamp": "2018-05-17T02:00:00Z"},
+            ]
+        self.assertCountEqual(
+            helpers.get_timeline_slice(full_list, dates_list),
+            sliced_list
+            )
+
 
 if __name__ == '__main__':
     unittest.main()
