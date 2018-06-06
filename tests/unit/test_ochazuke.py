@@ -56,19 +56,28 @@ class OchazukeTestCase(unittest.TestCase):
         """Given a list of dates, return the appropriate slice of data."""
         dates_list = ['2018-05-16', '2018-05-17']
         full_list = [
-            {"count": "485", "timestamp": "2018-05-15T00:00:00Z"},
-            {"count": "485", "timestamp": "2018-05-16T01:00:00Z"},
-            {"count": "485", "timestamp": "2018-05-17T01:00:00Z"},
-            {"count": "485", "timestamp": "2018-05-18T02:00:00Z"},
+            {"count": "485", "timestamp": "2018-05-15T01:00:00Z"},
+            {"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
+            {"count": "485", "timestamp": "2018-05-17T03:00:00Z"},
+            {"count": "485", "timestamp": "2018-05-18T04:00:00Z"},
             ]
         sliced_list = [
-            {"count": "485", "timestamp": "2018-05-16T01:00:00Z"},
-            {"count": "485", "timestamp": "2018-05-17T02:00:00Z"},
+            {"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
+            {"count": "485", "timestamp": "2018-05-17T03:00:00Z"}
             ]
-        self.assertCountEqual(
+        self.assertEqual(
             helpers.get_timeline_slice(full_list, dates_list),
             sliced_list
             )
+
+    def test_get_timeline_slice_out_of_range(self):
+        """Empty list if the dates list and the timeline do not match."""
+        dates_list = ['2018-04-16']
+        full_list = [
+            {"count": "485", "timestamp": "2018-05-15T01:00:00Z"},
+            {"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
+            ]
+        self.assertEqual(helpers.get_timeline_slice(full_list, dates_list), [])
 
 
 if __name__ == '__main__':

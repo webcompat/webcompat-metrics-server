@@ -36,3 +36,12 @@ def get_days(from_date, to_date):
             new_date = end - datetime.timedelta(days=n)
             dates.append(new_date.strftime(date_format))
     return dates
+
+
+def get_timeline_slice(timeline, dates_list):
+    """Return a partial timeline including only a predefined list of dates."""
+    sliced_data = [
+        dated_data for dated_data in timeline
+        if dated_data['timestamp'][:10] in dates_list
+        ]
+    return sliced_data
