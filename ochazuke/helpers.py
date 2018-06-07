@@ -57,3 +57,20 @@ def get_json_slice(timeline, from_date, to_date):
     return json.dumps(full_data)
 
 
+def is_valid_args(args):
+    """Check if the arguments we receive are valid."""
+    if args:
+        try:
+            from_date = args['from']
+            to_date = args['to']
+        except Exception:
+            return False
+        try:
+            date_format = '%Y-%m-%d'
+            datetime.datetime.strptime(from_date, date_format)
+            datetime.datetime.strptime(to_date, date_format)
+        except Exception:
+            return False
+        else:
+            return True
+    return False

@@ -8,6 +8,8 @@ import json
 import unittest
 from unittest.mock import patch
 
+from werkzeug.datastructures import ImmutableMultiDict
+
 from ochazuke import create_app
 from ochazuke import helpers
 
@@ -54,6 +56,46 @@ class OchazukeTestCase(unittest.TestCase):
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(rv.mimetype, 'application/json')
 
+    @patch('ochazuke.get_remote_data')
+    def test_needsdiagnosis_valid_param(self, mock_get):
+        """valid parameters on /needsdiagnosis-timeline."""
+        TIMELINE['timeline'] = DATA
+        mock_get.return_value = mocked_json(TIMELINE)
+        url = '/data/needsdiagnosis-timeline?from=2018-05-16&to=2018-05-18'
+        rv = self.client.get(url)
+        self.assertIn(
+            '{"count": "485", "timestamp": "2018-05-17T03:00:00Z"}',
+            rv.data.decode())
+        self.assertNotIn(
+            '{"count": "485", "timestamp": "2018-05-15T01:00:00Z"}',
+            rv.data.decode())
+
+    @patch('ochazuke.get_remote_data')
+    def test_needsdiagnosis_invalid_param(self, mock_get):
+        """Ignore invalid parameters on /needsdiagnosis-timeline."""
+        TIMELINE['timeline'] = DATA
+        mock_get.return_value = mocked_json(TIMELINE)
+        rv = self.client.get('/data/needsdiagnosis-timeline?blah=foo')
+        self.assertIn(
+            '{"count": "485", "timestamp": "2018-05-15T01:00:00Z"}',
+            rv.data.decode())
+        self.assertIn(
+            '{"count": "485", "timestamp": "2018-05-18T04:00:00Z"}',
+            rv.data.decode())
+
+    @patch('ochazuke.get_remote_data')
+    def test_needsdiagnosis_invalid_param_values(self, mock_get):
+        """Ignore invalid parameters values on /needsdiagnosis-timeline."""
+        TIMELINE['timeline'] = DATA
+        mock_get.return_value = mocked_json(TIMELINE)
+        rv = self.client.get('/data/needsdiagnosis-timeline?from=foo&to=bar')
+        self.assertIn(
+            '{"count": "485", "timestamp": "2018-05-15T01:00:00Z"}',
+            rv.data.decode())
+        self.assertIn(
+            '{"count": "485", "timestamp": "2018-05-18T04:00:00Z"}',
+            rv.data.decode())
+
     def test_date_range(self):
         """Given from_date and to_date, return a number of days."""
         from_date = '2018-01-02'
@@ -91,6 +133,19 @@ class OchazukeTestCase(unittest.TestCase):
             {"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
             ]
         self.assertEqual(helpers.get_timeline_slice(full_list, dates), [])
+
+    def test_is_valid_args(self):
+        """Return True or False depending on the args"""
+        self.assertTrue(helpers.is_valid_args(
+            ImmutableMultiDict([('from', '2018-05-16'), ('to', '2018-05-18')]))
+            )
+        self.assertFalse(helpers.is_valid_args(ImmutableMultiDict([])))
+        self.assertFalse(helpers.is_valid_args(
+            ImmutableMultiDict([('bar', 'foo')]))
+            )
+        self.assertFalse(helpers.is_valid_args(
+            ImmutableMultiDict([('from', 'bar'), ('to', 'foo')]))
+            )
 
 
 if __name__ == '__main__':
