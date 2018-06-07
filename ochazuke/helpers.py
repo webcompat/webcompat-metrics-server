@@ -6,6 +6,7 @@
 """Some helpers for the data processing section."""
 
 import datetime
+import json
 
 
 def get_days(from_date, to_date):
@@ -45,3 +46,14 @@ def get_timeline_slice(timeline, dates_list):
         if dated_data['timestamp'][:10] in dates_list
         ]
     return sliced_data
+
+
+def get_json_slice(timeline, from_date, to_date):
+    """Return a partial JSON timeline."""
+    dates = get_days(from_date, to_date)
+    full_data = json.loads(timeline)
+    partial_data = get_timeline_slice(full_data['timeline'], dates)
+    full_data['timeline'] = partial_data
+    return json.dumps(full_data)
+
+
