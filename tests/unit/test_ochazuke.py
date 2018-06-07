@@ -4,10 +4,29 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """Main testing module for Webcompat Metrics Server."""
+import json
 import unittest
+from unittest.mock import patch
 
 from ochazuke import create_app
 from ochazuke import helpers
+
+
+TIMELINE = {'about': 'Hourly NeedsDiagnosis issues count',
+            'date_format': 'w3c',
+            'timeline': []
+            }
+
+DATA = [{"count": "485", "timestamp": "2018-05-15T01:00:00Z"},
+        {"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
+        {"count": "485", "timestamp": "2018-05-17T03:00:00Z"},
+        {"count": "485", "timestamp": "2018-05-18T04:00:00Z"},
+        ]
+
+
+def mocked_json(expected_data):
+    """Prepare a json response when fed a dictionary."""
+    return json.dumps(expected_data)
 
 
 class OchazukeTestCase(unittest.TestCase):
@@ -23,8 +42,11 @@ class OchazukeTestCase(unittest.TestCase):
         rv = self.client.get('/')
         self.assertIn('Welcome to ochazuke', rv.data.decode())
 
-    def test_needsdiagnosis(self):
-        """/needsdiagnosis-timeline sends back JSON."""
+    @patch('ochazuke.get_remote_data')
+    def test_needsdiagnosis(self, mock_get):
+        """/data/needsdiagnosis-timeline sends back JSON."""
+        TIMELINE['timeline'] = DATA
+        mock_get.return_value = mocked_json(TIMELINE)
         rv = self.client.get('/data/needsdiagnosis-timeline')
         self.assertIn(
             '"about": "Hourly NeedsDiagnosis issues count"',
