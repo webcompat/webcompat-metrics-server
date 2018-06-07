@@ -9,8 +9,11 @@
 import os
 
 from flask import Flask
+from flask import request
 from flask import Response
 
+from ochazuke.helpers import get_json_slice
+from ochazuke.helpers import is_valid_args
 from tools.helpers import get_remote_data
 
 
@@ -47,6 +50,12 @@ def create_app(test_config=None):
         # TODO: Change this to a local file.
         json_data = get_remote_data(
             'http://www.la-grange.net/tmp/needsdiagnosis-timeline.json')
+        if is_valid_args(request.args):
+            json_data = get_json_slice(
+                json_data,
+                request.args.get('from'),
+                request.args.get('to')
+                )
         response = Response(
             response=json_data,
             status=200,
