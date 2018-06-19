@@ -60,6 +60,10 @@ class OchazukeTestCase(unittest.TestCase):
                          rv.headers['Access-Control-Allow-Origin'])
         self.assertTrue('Vary' in rv.headers.keys())
         self.assertEqual('Origin', rv.headers['Vary'])
+        self.assertTrue(
+            'Access-Control-Allow-Credentials' in rv.headers.keys())
+        self.assertEqual('true',
+                         rv.headers['Access-Control-Allow-Credentials'])
 
     @patch('ochazuke.get_remote_data')
     def test_needsdiagnosis_valid_param(self, mock_get):
