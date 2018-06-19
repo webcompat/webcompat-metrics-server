@@ -55,6 +55,11 @@ class OchazukeTestCase(unittest.TestCase):
             rv.data.decode())
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(rv.mimetype, 'application/json')
+        self.assertTrue('Access-Control-Allow-Origin' in rv.headers.keys())
+        self.assertEqual('https://webcompat.github.io',
+                         rv.headers['Access-Control-Allow-Origin'])
+        self.assertTrue('Vary' in rv.headers.keys())
+        self.assertEqual('Origin', rv.headers['Vary'])
 
     @patch('ochazuke.get_remote_data')
     def test_needsdiagnosis_valid_param(self, mock_get):

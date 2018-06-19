@@ -60,6 +60,10 @@ def create_app(test_config=None):
             response=json_data,
             status=200,
             mimetype='application/json')
+        response.headers.add(
+            'Access-Control-Allow-Origin',
+            'https://webcompat.github.io')
+        response.headers.add('Vary', 'Origin')
         return response
 
     return app
