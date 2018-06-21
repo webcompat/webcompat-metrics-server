@@ -56,8 +56,7 @@ class OchazukeTestCase(unittest.TestCase):
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(rv.mimetype, 'application/json')
         self.assertTrue('Access-Control-Allow-Origin' in rv.headers.keys())
-        self.assertEqual('https://webcompat.github.io',
-                         rv.headers['Access-Control-Allow-Origin'])
+        self.assertEqual('*', rv.headers['Access-Control-Allow-Origin'])
         self.assertTrue('Vary' in rv.headers.keys())
         self.assertEqual('Origin', rv.headers['Vary'])
         self.assertTrue(
