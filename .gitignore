@@ -12,6 +12,13 @@ __pycache__/
 instance/
 .webassets-cache
 
+# Heroku environmental variables
+.env
+
 # virtualenv
 .venv
 venv/
+env/
+
+# IDEs
+.vscode
