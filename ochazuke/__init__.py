@@ -15,6 +15,7 @@ from flask import Response
 from ochazuke.helpers import get_json_slice
 from ochazuke.helpers import is_valid_args
 from tools.helpers import get_remote_data
+from ochazuke.models import db
 
 
 def create_app(test_config=None):
@@ -23,7 +24,7 @@ def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
         SECRET_KEY='dev',
-        )
+    )
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
@@ -37,6 +38,11 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
+
+    # configure the postgresql database
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    db.init_app(app)
 
     # A route for starting
     @app.route('/')
@@ -55,7 +61,7 @@ def create_app(test_config=None):
                 json_data,
                 request.args.get('from'),
                 request.args.get('to')
-                )
+            )
         response = Response(
             response=json_data,
             status=200,
