@@ -23,6 +23,10 @@ class Milestone(db.Model):
     title = db.Column(postgresql.TEXT, unique=True, nullable=False)
     issues = db.relationship('Issue', backref='milestone', lazy=True)
 
+    # make initializing of milestone objects more concise
+    def __init__(self, title):
+        self.title = title
+
     # string representation of a milestone is its id followed by title
     def __repr__(self):
         return '<Milestone {}: {}>'.format(self.id, self.title)
@@ -54,6 +58,10 @@ class Label(db.Model):
                                    lazy='subquery',
                                    backref=db.backref('labels', lazy=True))
 
+    # make initializing of label objects more concise
+    def __init__(self, name):
+        self.name = name
+
     # string representation of a label is its id and name
     def __repr__(self):
         return '<Label {}: {}>'.format(self.id, self.name)
@@ -73,11 +81,19 @@ class Issue(db.Model):
     """
     id = db.Column(postgresql.INTEGER, primary_key=True, unique=True)
     header = db.Column(postgresql.TEXT, nullable=False)
-    is_open = db.Column(postgresql.BOOLEAN, nullable=False)
     created_at = db.Column(postgresql.TIMESTAMP(timezone=True), nullable=False)
     milestone_id = db.Column(postgresql.INTEGER, db.ForeignKey(
         'milestone.id'))
+    is_open = db.Column(postgresql.BOOLEAN, nullable=False)
     events = db.relationship('Event', backref='issue', lazy=True)
+
+    # make initializing of issue objects more concise
+    def __init__(self, id, header, created_at, milestone_id, is_open=True):
+        self.id = id
+        self.header = header
+        self.created_at = created_at
+        self.milestone_id = milestone_id
+        self.is_open = is_open
 
     # string representation of an issue is its id and creation timestamp
     def __repr__(self):
@@ -95,10 +111,7 @@ class Event(db.Model):
     details -- json data for any specifics (labeling/milestoning events:
     the name/title of the label/milestone applied or removed, heading edits:
     the old and new heading strings, closed or re-opened: none/null), and
-    a creation/receipt date and time in UTC (*here also it seems like GH
-    doesn't include a timestamp for when event occured so we may need to record
-    when we insert after receiving the webhook instead... OR decide that we
-    don't care since it can be retrieved later from the API*).
+    an update date and time in UTC as recorded by GitHub.
     """
     id = db.Column(postgresql.INTEGER, primary_key=True, unique=True)
     issue_id = db.Column(postgresql.INTEGER, db.ForeignKey('issue.id'),
@@ -108,6 +121,14 @@ class Event(db.Model):
     details = db.Column(postgresql.JSON)
     received_at = db.Column(postgresql.TIMESTAMP(timezone=True),
                             nullable=False)
+
+    # make initializing of event objects more concise
+    def __init__(self, issue_id, actor, action, details, received_at):
+        self.issue_id = issue_id
+        self.actor = actor
+        self.action = action
+        self.details = details
+        self.received_at = received_at
 
     # string representation of an event is its id, its parent issue's id,
     # the action taken, and timestamp of receipt from GitHub
