@@ -39,7 +39,10 @@ def create_app(test_config=None):
     except OSError:
         pass
 
+    app.config['HOOK_SECRET_KEY'] = os.environ.get('HOOK_SECRET_KEY')
+
     # configure the postgresql database
+    # fetch the environmental variable for the database location
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
