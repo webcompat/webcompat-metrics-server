@@ -18,7 +18,8 @@ from flask import request
 from ochazuke import app
 
 from .helpers import is_github_hook
-from .helpers import process_issue_event_info
+from .helpers import extract_issue_event_info
+from .helpers import update_db
 from .helpers import process_label_event_info
 from .helpers import process_milestone_event_info
 
@@ -42,10 +43,11 @@ def issues_hooklistener():
         action = payload.get('action')
         # We don't care about assignment events.
         if action != ('assigned' or 'unassigned'):
-                # Extract relevant info to update issue and event tables.
-                process_issue_event_info(payload)
-                return ('Yay! Data! *munch, munch, munch*', 202,
-                        {'Content-Type': 'text/plain'})
+            # Extract relevant info to update issue and event tables.
+            issue_event_info = extract_issue_event_info(payload)
+            update_db(issue_event_info, action)
+            return ('Yay! Data! *munch, munch, munch*', 202,
+                    {'Content-Type': 'text/plain'})
         else:
             # We acknowledge receipt even if we don't process all event types.
             return ('We\'ll just circular-file that, but thanks!', 202,
@@ -59,7 +61,7 @@ def issues_hooklistener():
             event=event_type)
         log.info(msg)
         # If nothing worked as expected, the default response is 403.
-        return ('This is not the hook we\'re looking for...', 403,
+        return ('This is not the hook we\'re looking for.', 403,
                 {'Content-Type': 'text/plain'})
 
 
@@ -76,17 +78,10 @@ def label_hooklistener():
 
     # Treating events related to labels
     if event_type == 'label':
-        action = payload.get('action')
-        # We probably want to keep old labels even if they're deleted on GH.
-        if action != 'deleted':
-            # Extract relevant info to update label table.
-            process_label_event_info(payload)
-            return ('Yay! Data! *munch, munch, munch*', 202,
-                    {'Content-Type': 'text/plain'})
-        else:
-            # We don't process deletions, but do acknowledge receipt.
-            return ('We\'ll just circular-file that, but thanks!', 202,
-                    {'Content-Type': 'text/plain'})
+        # Extract relevant info to update label table.
+        process_label_event_info(payload)
+        return ('Yay! Data! *munch, munch, munch*', 202,
+                {'Content-Type': 'text/plain'})
     elif event_type == 'ping':
         return ('pong', 200, {'Content-Type': 'text/plain'})
     else:
@@ -114,9 +109,8 @@ def milestone_hooklistener():
     # Treating events related to milestones
     if event_type == 'milestone':
         action = payload.get('action')
-        # Other possible actions are opened, closed, and deleted, but we don't
-        # use the first two and probably don't want to mirror GH deletions.
-        if action == ('created' or 'edited'):
+        # Other possible actions are opened and closed, but we don't use them.
+        if action in ['created', 'edited', 'deleted']:
             # We extract relevant info to update the milestone table.
             process_milestone_event_info(payload)
             return ('Yay! Data! *munch, munch, munch*', 202,
