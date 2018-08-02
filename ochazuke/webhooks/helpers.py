@@ -62,7 +62,7 @@ def is_github_hook(request):
     return False
 
 
-def process_issue_event_info(payload):
+def extract_issue_event_info(payload):
     """Extract information we need when handling webhook for issue events."""
     # Extract the event-specific info and make our own timestamp
     event_timestmp = datetime.utcnow().replace(microsecond=0).isoformat() + 'Z'
@@ -82,7 +82,7 @@ def process_issue_event_info(payload):
             details = None
     elif action == ('milestoned' or 'demilestoned'):
         details = {'milestone title': payload.get(
-                    'issue')['milestone']['title']}
+            'issue')['milestone']['title']}
     else:
         details = {'label name': payload.get('label')['name']}
     # Create a concise issue event dictionary
@@ -94,22 +94,26 @@ def process_issue_event_info(payload):
                         'action': action,
                         'details': details,
                         'received_at': event_timestmp}
-    # Pass dictionary to appropriate processor depending on event type
+    return issue_event_info
+
+
+def update_db(info, action):
+    """Route extracted data to the appropriate handler for the event type."""
     if action == 'opened':
-        new_issue(issue_event_info)
-    if action == 'edited':
-        issue_header_edit(issue_event_info)
-    if action == ('closed' or 'reopened'):
-        issue_status_change(issue_event_info)
-    if action == ('milestoned' or 'unmilestoned'):
-        issue_milestone_change(issue_event_info)
-    if action == ('labeled' or 'unlabeled'):
-        issue_label_change(issue_event_info)
+        add_new_issue(info)
+    elif action == 'edited':
+        issue_header_edit(info)
+    elif action == ('closed' or 'reopened'):
+        issue_status_change(info)
+    elif action == ('milestoned' or 'unmilestoned'):
+        issue_milestone_change(info)
+    elif action == ('labeled' or 'unlabeled'):
+        issue_label_change(info)
     # Store all new events except assigned/unassigned (filtered out in route)
-    new_event(issue_event_info)
+    add_new_event(info)
 
 
-def new_issue(info):
+def add_new_issue(info):
     """Create an issue object to insert into db from an 'opened' issue event.
 
     When a new issue is opened, we insert it into our issue table, including:
@@ -120,10 +124,9 @@ def new_issue(info):
     - milestone id number (int, 'milestone_id')
     """
     milestone_title = info.get('milestone')
-    milestone = Milestone.query.filter_by(title=milestone_title).one()
-    bug = Issue(id=info.get('issue_id'), header=info.get('header'),
-                is_open=True, created_at=info.get('created_at'),
-                milestone_id=milestone.id)
+    milestone = Milestone.query.filter_by(milestone_title).one()
+    bug = Issue(info.get('issue_id'), info.get('header'),
+                info.get('created_at'), milestone_id=milestone.id)
     # TODO: log failures/errors as well?
     # Add issue to staging
     db.session.add(bug)
@@ -135,7 +138,7 @@ def new_issue(info):
     log.info(msg)
 
 
-def new_event(info):
+def add_new_event(info):
     """Create an event object to insert into db from a new issue event.
 
     When a new event is signaled, we insert it into the event table, including:
@@ -146,9 +149,8 @@ def new_event(info):
     - when we received the event (timestamp, 'received_at')
     We assign each event a unique id automatically upon insertion to the db.
     """
-    event = Event(issue_id=info.get('issue_id'), actor=info.get('actor'),
-                  action=info.get('action'), details=info.get('details'),
-                  received_at=info.get('received_at'))
+    event = Event(info.get('issue_id'), info.get('actor'), info.get('action'),
+                  info.get('details'), info.get('received_at'))
     # TODO: log failures/errors as well?
     # Add event to staging
     db.session.add(event)
@@ -207,13 +209,14 @@ def process_label_event_info(payload):
         prior_name = payload.get('changes')['name']['from']
         name_edited = True
     if action == 'created':
-        label = Label(name=label_name)
+        label = Label(label_name)
         db.session.add(label)
     elif (action == 'edited') and name_edited:
         label = Label.query.filter_by(name=prior_name)
         label.name = label_name
     else:
-        return
+        label = Label.query.filter_by(name=label_name)
+        db.session.remove(label)
     db.session.commit()
 
 
@@ -225,11 +228,12 @@ def process_milestone_event_info(payload):
     if prior_title is not None:
         title_edited = True
     if action == 'created':
-        milestone = Milestone(title=milestone_title)
+        milestone = Milestone(milestone_title)
         db.session.add(milestone)
     elif (action == 'edited') and title_edited:
         milestone = Milestone.query.filter_by(title=prior_title)
         milestone.title = milestone_title
     else:
-        return
+        milestone = Milestone.query.filter_by(title=milestone_title)
+        db.session.remove(milestone)
     db.session.commit()
