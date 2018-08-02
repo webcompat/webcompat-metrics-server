@@ -56,7 +56,6 @@ def is_github_hook(request):
         return False
     post_signature = request.headers.get('X-Hub-Signature')
     if post_signature:
-        # TODO: DETERMINE WHERE TO HIDE SECRET KEY
         key = app.config['HOOK_SECRET_KEY']
         return signature_check(key, post_signature, request.data)
     return False

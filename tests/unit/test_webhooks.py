@@ -12,7 +12,7 @@ import unittest
 
 import flask
 
-from ochazuke import create_app
+import ochazuke
 from ochazuke.models import db
 from ochazuke.models import Issue
 from ochazuke.models import Event
@@ -20,8 +20,7 @@ from ochazuke.webhooks import helpers
 
 
 # The key is for testing and computing the signature.
-# TODO: figure out storage/retrieval configuration
-key = 'SECRETS'
+key = ochazuke.app.config['HOOK_SECRET_KEY']
 
 
 # Some machinery for opening our test files
@@ -42,10 +41,10 @@ class TestWebhooks(unittest.TestCase):
 
     def setUp(self):
         """Set up tests."""
-        self.app = create_app(test_config={})
+        self.app = ochazuke.create_app(test_config={})
         self.client = self.app.test_client()
         # binds app to the current context
-        self.app_context = self.app.app_context()
+        self.app_context = self.app.app_context().push()
         # create all the tables for testing
         db.create_all()
         self.headers = {'content-type': 'application/json'}
