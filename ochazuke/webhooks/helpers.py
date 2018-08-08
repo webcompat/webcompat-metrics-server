@@ -8,16 +8,24 @@
 import hashlib
 import hmac
 import logging
+import sqlalchemy
 
-from datetime import datetime
+# from datetime import datetime
 
-from ochazuke import app
+import ochazuke
 from ochazuke.models import db, Milestone, Label, Issue, Event
+
+logger = logging.getLogger(__name__)
 
 
 def get_payload_signature(key, payload):
     """Compute the payload signature given a key."""
+    key = key.encode('utf-8')
+    print('Key encoded in get_payload_signature: %s', key)
+    # HMAC requires its key to be encoded bytes
     mac = hmac.new(key, msg=payload, digestmod=hashlib.sha1)
+    print("MAC.HEXDIGEST: ")
+    print(mac.hexdigest())
     return mac.hexdigest()
 
 
@@ -29,25 +37,10 @@ def signature_check(key, post_signature, payload):
         return False
     if not signature:
         return False
-    # HMAC requires its key to be bytes, but data is strings.
     hexmac = get_payload_signature(key, payload)
-    return compare_digest(hexmac, signature.encode('utf-8'))
-
-
-def compare_digest(x, y):
-    """Create a hmac comparison.
-
-    Approximates hmac.compare_digest (Py 2.7.7+) until we upgrade.
-    TODO: SEE IF THIS NEEDS TO BE ADAPTED FOR PY3.6
-    """
-    if not (isinstance(x, bytes) and isinstance(y, bytes)):
-        raise TypeError("both inputs should be instances of bytes")
-    if len(x) != len(y):
-        return False
-    result = 0
-    for a, b in zip(bytearray(x), bytearray(y)):
-        result |= a ^ b
-    return result == 0
+    print("HEXMAC: ")
+    print(hexmac)
+    return hmac.compare_digest(hexmac, signature)
 
 
 def is_github_hook(request):
@@ -56,16 +49,31 @@ def is_github_hook(request):
         return False
     post_signature = request.headers.get('X-Hub-Signature')
     if post_signature:
-        key = app.config['HOOK_SECRET_KEY']
+        key = ochazuke.app.config['HOOK_SECRET_KEY']
         return signature_check(key, post_signature, request.data)
     return False
 
 
-def extract_issue_event_info(payload):
+def is_desirable_issue_event(action, changes):
+    """Determine whether issue event is worth processing."""
+    if action in ['opened', 'closed', 'reopened', 'labeled', 'unlabeled',
+                  'milestoned', 'unmilestoned']:
+        return True
+    # We don't care about issue body edits since we only store titles
+    elif (action == 'edited') and changes.get('title'):
+        return True
+    # We don't know what this is, but we might want to find out
+    elif action not in ['assigned', 'unassigned', 'edited']:
+        msg = 'Hey, GitHub sent a funky issues-event action: {act}'.format(
+            act=action)
+        logger.info(msg)
+    return False
+
+
+def extract_issue_event_info(payload, action, changes):
     """Extract information we need when handling webhook for issue events."""
     # Extract the event-specific info and make our own timestamp
-    event_timestmp = datetime.utcnow().replace(microsecond=0).isoformat() + 'Z'
-    action = payload.get('action')
+    # event_timestamp = datetime.utcnow().isoformat(timespec='seconds') + 'Z'
     milestone = payload.get('issue')['milestone']
     # If there is no milestone data, let title be None
     if milestone is not None:
@@ -74,11 +82,10 @@ def extract_issue_event_info(payload):
         milestone_title = None
     # Let details be None for opening/closing, but preserve old title on edits
     if action in ['opened', 'closed', 'reopened', 'edited']:
-        changes = payload.get('changes')
+        details = None
         if changes is not None:
-            details = {'old title': changes['title']['from']}
-        else:
-            details = None
+            if changes.get('title') is not None:
+                details = {'old title': changes['title']['from']}
     elif action == ('milestoned' or 'demilestoned'):
         details = {'milestone title': payload.get(
             'issue')['milestone']['title']}
@@ -92,7 +99,8 @@ def extract_issue_event_info(payload):
                         'actor': payload.get('sender')['login'],
                         'action': action,
                         'details': details,
-                        'received_at': event_timestmp}
+                        'received_at': payload.get('issue')['updated_at']
+                        }
     return issue_event_info
 
 
@@ -103,12 +111,12 @@ def update_db(info, action):
     elif action == 'edited':
         issue_header_edit(info)
     elif action == ('closed' or 'reopened'):
-        issue_status_change(info)
+        issue_status_change(info, action)
     elif action == ('milestoned' or 'unmilestoned'):
         issue_milestone_change(info)
     elif action == ('labeled' or 'unlabeled'):
         issue_label_change(info)
-    # Store all new events except assigned/unassigned (filtered out in route)
+    # Store all new desirable valid events
     add_new_event(info)
 
 
@@ -123,18 +131,23 @@ def add_new_issue(info):
     - milestone id number (int, 'milestone_id')
     """
     milestone_title = info.get('milestone')
-    milestone = Milestone.query.filter_by(milestone_title).one()
+    milestone = Milestone.query.filter_by(milestone_title)
     bug = Issue(info.get('issue_id'), info.get('header'),
                 info.get('created_at'), milestone_id=milestone.id)
-    # TODO: log failures/errors as well?
-    # Add issue to staging
+    # Add issue to session staging
     db.session.add(bug)
-    # Perform the actual insertion to the database
-    db.session.commit()
-    log = app.logger
-    log.setLevel(logging.INFO)
-    msg = 'New issue ({iss}) successfully added to database.'.format(iss=bug)
-    log.info(msg)
+    try:
+        # Perform the actual insertion to the database
+        db.session.commit()
+        msg = 'New issue ({iss}) successfully added to database.'.format(
+            iss=bug)
+        logger.info(msg)
+        # Catch an error and attempt to recover by backing out of the 'add'.
+    except sqlalchemy.exc.SQLAlchemyError as error:
+        db.session.rollback()
+        msg = 'Yikes! Failed to add issue to database: {err}'.format(
+            err=error)
+        logger.warning(msg)
 
 
 def add_new_event(info):
@@ -150,15 +163,20 @@ def add_new_event(info):
     """
     event = Event(info.get('issue_id'), info.get('actor'), info.get('action'),
                   info.get('details'), info.get('received_at'))
-    # TODO: log failures/errors as well?
     # Add event to staging
     db.session.add(event)
-    # Insert event into event table
-    db.session.commit()
-    log = app.logger
-    log.setLevel(logging.INFO)
-    msg = 'New event ({evt}) successfully added to database.'.format(evt=event)
-    log.info(msg)
+    try:
+        # Perform the actual insertion to the event table
+        db.session.commit()
+        msg = 'New event ({evg}) successfully added to database.'.format(
+            evt=event)
+        logger.info(msg)
+        # Catch an error and attempt to recover by backing out of the 'add'.
+    except sqlalchemy.exc.SQLAlchemyError as error:
+        db.session.rollback()
+        msg = 'Yikes! Failed to add event to database: {err}'.format(
+            err=error)
+        logger.warning(msg)
 
 
 def issue_header_edit(info):
@@ -170,10 +188,11 @@ def issue_header_edit(info):
     db.session.commit()
 
 
-def issue_status_change(info):
+def issue_status_change(info, action):
     """Toggle an issue's 'is_open' status in table between true and false."""
     bug = Issue.query.get(info.get('issue_id'))
-    bug.is_open = (False if bug.is_open else True)
+    status = {'closed': False, 'reopened': True}
+    bug.is_open = status[action]
     db.session.commit()
 
 
