@@ -7,6 +7,7 @@
 """Create Ochazuke: the webcompat-metrics-server Flask application."""
 
 import os
+import logging
 
 from flask import Flask
 from flask import request
@@ -16,6 +17,7 @@ from ochazuke.helpers import get_json_slice
 from ochazuke.helpers import is_valid_args
 from tools.helpers import get_remote_data
 from ochazuke.models import db
+from ochazuke.webhooks import webhooks
 
 
 def create_app(test_config=None):
@@ -39,7 +41,17 @@ def create_app(test_config=None):
     except OSError:
         pass
 
+<<<<<<< HEAD
     # configure the postgresql database
+=======
+    for blueprint in [webhooks]:
+        app.register_blueprint(blueprint)
+
+    app.config['HOOK_SECRET_KEY'] = os.environ.get('HOOK_SECRET_KEY')
+
+    # configure the postgresql database
+    # fetch the environment variable for the database location
+>>>>>>> dee67f3... Issue #43 - Attach webhook blueprint and logging to app
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
@@ -73,5 +85,14 @@ def create_app(test_config=None):
 
     return app
 
+
+# Logging Capabilities
+# To benefit from the logging, you may want to add:
+#   app.logger.info(Thing_To_Log)
+# it will create a line with the following format
+# (2015-09-14 20:50:19) INFO: Thing_To_Log
+logging.basicConfig(filename='/tmp/ochazuke.log',
+                    format='(%(asctime)s) %(levelname)s: %(message)s',
+                    datefmt='%Y-%m-%d  % H:%M:%S %z', level=logging.INFO)
 
 app = create_app()
