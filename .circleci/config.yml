@@ -13,10 +13,11 @@ jobs:
           FLASK_CONFIG: testing
           DATABASE_URL: postgresql://root@localhost/circle_test
           HOOK_SECRET_KEY: SECRETS
-      - image: circleci/postgres:10.4-alpine-ram
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
+      - image: circleci/postgres:10.4-alpine-ram
+
 
     working_directory: ~/repo
 
