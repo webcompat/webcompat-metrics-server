@@ -7,6 +7,7 @@
 """Create Ochazuke: the webcompat-metrics-server Flask application."""
 
 import os
+import logging
 
 from flask import Flask
 from flask import request
@@ -80,5 +81,14 @@ def create_app(test_config=None):
 
     return app
 
+
+# Logging Capabilities
+# To benefit from the logging, you may want to add:
+#   app.logger.info(Thing_To_Log)
+# it will create a line with the following format
+# (2015-09-14 20:50:19) INFO: Thing_To_Log
+logging.basicConfig(filename='/tmp/ochazuke.log',
+                    format='(%(asctime)s) %(levelname)s: %(message)s',
+                    datefmt='%Y-%m-%d  % H:%M:%S %z', level=logging.INFO)
 
 app = create_app()
