@@ -197,7 +197,14 @@ def issue_status_change(info, action):
 
 
 def issue_milestone_change(info):
-    """Add or remove an issue's milestone after an issue milestone event."""
+    """Add or remove an issue's milestone after an issue milestone event.
+    
+    Changing an issue's milestone is handled by GitHub as two discrete events:
+    1. Remove the existing milestone
+    2. Add a new one
+    As a result, an issue can exist (very briefly) in a temporary
+    non-milestoned state between the firing of the first event and the second.
+    """
     issue = Issue.query.get(info.get('issue_id'))
     if info.get('action') == 'milestoned':
         issue.milestone = info.get('milestone_id')
