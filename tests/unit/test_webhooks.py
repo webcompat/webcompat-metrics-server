@@ -11,7 +11,7 @@ import os
 import unittest
 import flask
 
-from ochazuke import create_app
+import ochazuke
 from ochazuke.models import db
 # from ochazuke.models import Issue
 # from ochazuke.models import Event
@@ -19,8 +19,7 @@ from ochazuke.webhooks import helpers
 
 
 # The key is for testing and computing the signature.
-# TODO: figure out storage/retrieval configuration
-key = 'SECRETS'
+key = ochazuke.app.config['HOOK_SECRET_KEY']
 
 
 # Some machinery for opening our test files
@@ -128,6 +127,32 @@ class TestWebhooks(unittest.TestCase):
         self.assertEqual(
             response.data, b'We may just circular-file that, but thanks!')
 
+    def test_ignore_undesirable_issue_action(self):
+        """Uninteresting issue actions are accepted but not processed."""
+        json_event, signature = event_data('issue_body_edit_meh.json')
+        self.headers.update({'X-GitHub-Event': 'issues',
+                             'X-Hub-Signature': signature})
+        response = self.client.post(self.test_url,
+                                    data=json_event,
+                                    headers=self.headers)
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.mimetype, 'text/plain')
+        self.assertEqual(
+            response.data, b'We may just circular-file that, but thanks!')
+
+    def test_ignore_unimportant_milestone_action(self):
+        """Uninteresting milestone actions are accepted but not processed."""
+        json_event, signature = event_data('milestone_close_meh.json')
+        self.headers.update({'X-GitHub-Event': 'milestone',
+                             'X-Hub-Signature': signature})
+        response = self.client.post(self.test_url,
+                                    data=json_event,
+                                    headers=self.headers)
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.mimetype, 'text/plain')
+        self.assertEqual(
+            response.data, b'We may just circular-file that, but thanks!')
+
     def test_extract_issue_event_info(self):
         """Extract the right information from an issue event."""
         json_event, signature = event_data('new_issue_event_valid.json')
@@ -147,7 +172,9 @@ class TestWebhooks(unittest.TestCase):
                              'Issue event info extracted correctly.')
 
     def test_add_new_issue(self):
-        # """Successfully add an issue to the issue table."""
+        """Successfully add an issue to the issue table."""
+        # TODO: Figure out how to mock DB events
+        pass
         # expected = [2475, 'Cannot log in to www.artisanalmustard.com!',
         #             '2018-07-30T13:22:36Z', 5, True]
         # starting_total = Issue.query.count()
@@ -164,6 +191,7 @@ class TestWebhooks(unittest.TestCase):
 
     def test_add_new_event(self):
         """Successfully add an event to the event table."""
+        pass
         # expected = [2475, 'laghee', 'opened', None, '2018-07-30T13:22:36Z']
         # starting_total = Event.query.count()
         # helpers.add_new_event(self.payload)
@@ -171,7 +199,6 @@ class TestWebhooks(unittest.TestCase):
         # event = Event.query.filter_by(issue_id=2475, action='opened')
         # actual = [event.issue_id, event.actor, event.action, event.details,
         #           event.received_at]
-        pass
         # self.assertEqual(starting_total+1, new_total,
         #                  'Exactly one issue added.')
         # self.assertListEqual(expected, actual,
