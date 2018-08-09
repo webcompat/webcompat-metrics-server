@@ -23,16 +23,16 @@ class Milestone(db.Model):
     title = db.Column(postgresql.TEXT, unique=True, nullable=False)
     issues = db.relationship('Issue', backref='milestone', lazy=True)
 
-    # make initializing of milestone objects more concise
     def __init__(self, title):
+        """Initialize a milestone with its title."""
         self.title = title
 
-    # string representation of a milestone is its id followed by title
     def __repr__(self):
+        """Return a milestone as a string of its id followed by its title."""
         return '<Milestone {}: {}>'.format(self.id, self.title)
 
 
-# define a table to handle the many-to-many link of issues and labels
+# Define a table to facilitate the many-to-many link of issues and labels
 issue_labels = db.Table('issue_labels',
                         db.Column('issue_id',
                                   postgresql.INTEGER,
@@ -44,7 +44,6 @@ issue_labels = db.Table('issue_labels',
 
 
 class Label(db.Model):
-
     """Define a label object and establish table fields/properties.
 
     A label has as a unique table id assigned at insertion.
@@ -58,19 +57,19 @@ class Label(db.Model):
                                    lazy='subquery',
                                    backref=db.backref('labels', lazy=True))
 
-    # make initializing of label objects more concise
     def __init__(self, name):
+        """Initialize a label with its name."""
         self.name = name
 
-    # string representation of a label is its id and name
     def __repr__(self):
+        """Return a label as a string of its table id followed by its name."""
         return '<Label {}: {}>'.format(self.id, self.name)
 
 
 class Issue(db.Model):
     """Define an issue object and establish table fields/properties.
 
-    An issue has as a unique id assigned by GitHub.
+    An issue has as a unique id number assigned by GitHub.
     An issue also has a header (e.g., 'google.com - design is broken'),
     a creation date and time (UTC, as recorded by GitHub),
     a milestone (usually),
@@ -87,16 +86,18 @@ class Issue(db.Model):
     is_open = db.Column(postgresql.BOOLEAN, nullable=False)
     events = db.relationship('Event', backref='issue', lazy=True)
 
-    # make initializing of issue objects more concise
     def __init__(self, id, header, created_at, milestone_id, is_open=True):
+        """Initialize an issue with its github number, header (title),
+        creation date, milestone id, and status (defaults to open).
+        """
         self.id = id
         self.header = header
         self.created_at = created_at
         self.milestone_id = milestone_id
         self.is_open = is_open
 
-    # string representation of an issue is its id and creation timestamp
     def __repr__(self):
+        """Return an issue as a string of its id followed by creation date."""
         return '<Issue {}: Filed {}>'.format(self.id, self.created_at)
 
 
@@ -111,7 +112,7 @@ class Event(db.Model):
     details -- json data for any specifics (labeling/milestoning events:
     the name/title of the label/milestone applied or removed, heading edits:
     the old and new heading strings, closed or re-opened: none/null), and
-    an update date and time in UTC as recorded by GitHub.
+    an update timestamp (when the event occurred) in UTC, recorded by GitHub.
     """
     id = db.Column(postgresql.INTEGER, primary_key=True, unique=True)
     issue_id = db.Column(postgresql.INTEGER, db.ForeignKey('issue.id'),
@@ -122,17 +123,19 @@ class Event(db.Model):
     received_at = db.Column(postgresql.TIMESTAMP(timezone=True),
                             nullable=False)
 
-    # make initializing of event objects more concise
     def __init__(self, issue_id, actor, action, details, received_at):
+        """Initialize an event with an issue number, the actor, the action,
+        issue edit or milestone/label details (in json), and when it occurred.
+        """
         self.issue_id = issue_id
         self.actor = actor
         self.action = action
         self.details = details
         self.received_at = received_at
 
-    # string representation of an event is its id, its parent issue's id,
-    # the action taken, and timestamp of receipt from GitHub
     def __repr__(self):
+        """Return an event as a string of its table id, the issue it occurred
+        on, its action, and when it occurred."""
         return '<Event {} (Issue #{}): {} [{}] >'.format(self.id,
                                                          self.issue_id,
                                                          self.action,
