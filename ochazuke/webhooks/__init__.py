@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""Flask Blueprint for our "webhooks" module.webhooks.
+"""Flask Blueprint for our GitHub webhooks.
 
 See https://developer.github.com/webhooks/ for what is possible.
 """
@@ -24,8 +24,10 @@ from ochazuke.webhooks.helpers import process_milestone_event_info
 
 logger = logging.getLogger(__name__)
 webhooks = Blueprint('webhooks', __name__, url_prefix='/webhooks')
-meh_response = ('We may just circular-file that, but thanks!', 202,
-                {'Content-Type': 'text/plain'})
+TEXT_PLAIN = {'Content-Type': 'text/plain'}
+MEH_RESPONSE = ('We may just circular-file that, but thanks!', 202,
+                TEXT_PLAIN)
+NO_AUTH = ('This is not the hook we seek.', 403, TEXT_PLAIN)
 
 
 @webhooks.route('/ghevents', methods=['POST'])
@@ -35,13 +37,16 @@ def issues_hooklistener():
     By default, we return a 403 HTTP response.
     """
     if not is_github_hook(request):
-        return ('Move along, nothing to see here', 401, {'Content-Type':
-                                                         'text/plain'})
+        return ('Move along, nothing to see here', 401, )
     event_type = request.headers.get('X-GitHub-Event')
-    payload = json.loads(request.data)
-    action = payload.get('action')
-    changes = payload.get('changes')
-
+    try:
+        payload = json.loads(request.data)
+        action = payload.get('action')
+        changes = payload.get('changes')
+    except Exception as error:
+        msg = 'Huh? GitHub sent us some wonky garbage, folks: {err}'.format(
+            err=error)
+        logger.info(msg)
     # Treating issue events
     if event_type == 'issues':
         if is_desirable_issue_event(action, changes):
@@ -49,11 +54,10 @@ def issues_hooklistener():
             issue_event_info = extract_issue_event_info(payload, action,
                                                         changes)
             update_db(issue_event_info, action)
-            return ('Yay! Data! *munch, munch, munch*', 200,
-                    {'Content-Type': 'text/plain'})
+            return ('Yay! Data! *munch, munch, munch*', 200, TEXT_PLAIN)
         else:
             # We acknowledge receipt for events that we don't process.
-            return meh_response
+            return MEH_RESPONSE
     # Treating label events
     elif event_type == 'label':
         # Extract relevant info to update label table.
@@ -64,14 +68,13 @@ def issues_hooklistener():
             # We extract relevant info to update the milestone table.
             process_milestone_event_info(payload)
         else:
-            return meh_response
+            return MEH_RESPONSE
     elif event_type == 'ping':
-        return ('pong', 200, {'Content-Type': 'text/plain'})
+        return ('pong', 200, TEXT_PLAIN)
     else:
         # Log unexpected events.
         msg = 'Hey! GitHub sent us a funky (or new) event: {event}'.format(
             event=event_type)
         logger.info(msg)
         # If nothing worked as expected, the default response is 403.
-        return ('This is not the hook we are looking for.', 403,
-                {'Content-Type': 'text/plain'})
+        return NO_AUTH

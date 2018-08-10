@@ -3,14 +3,12 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-"""Helpers methods for webhooks."""
+"""Helper methods for webhooks."""
 
 import hashlib
 import hmac
 import logging
 import sqlalchemy
-
-# from datetime import datetime
 
 import ochazuke
 from ochazuke.models import db, Milestone, Label, Issue, Event
@@ -21,11 +19,8 @@ logger = logging.getLogger(__name__)
 def get_payload_signature(key, payload):
     """Compute the payload signature given a key."""
     key = key.encode('utf-8')
-    print('Key encoded in get_payload_signature: %s', key)
     # HMAC requires its key to be encoded bytes
     mac = hmac.new(key, msg=payload, digestmod=hashlib.sha1)
-    print("MAC.HEXDIGEST: ")
-    print(mac.hexdigest())
     return mac.hexdigest()
 
 
@@ -38,8 +33,6 @@ def signature_check(key, post_signature, payload):
     if not signature:
         return False
     hexmac = get_payload_signature(key, payload)
-    print("HEXMAC: ")
-    print(hexmac)
     return hmac.compare_digest(hexmac, signature)
 
 
@@ -76,15 +69,15 @@ def extract_issue_event_info(payload, action, changes):
     # event_timestamp = datetime.utcnow().isoformat(timespec='seconds') + 'Z'
     milestone = payload.get('issue')['milestone']
     # If there is no milestone data, let title be None
-    if milestone is not None:
+    if milestone:
         milestone_title = milestone.get('title')
     else:
         milestone_title = None
     # Let details be None for opening/closing, but preserve old title on edits
     if action in ['opened', 'closed', 'reopened', 'edited']:
         details = None
-        if changes is not None:
-            if changes.get('title') is not None:
+        if changes:
+            if changes.get('title'):
                 details = {'old title': changes['title']['from']}
     elif action == ('milestoned' or 'demilestoned'):
         details = {'milestone title': payload.get(
@@ -198,7 +191,7 @@ def issue_status_change(info, action):
 
 def issue_milestone_change(info):
     """Add or remove an issue's milestone after an issue milestone event.
-    
+
     Changing an issue's milestone is handled by GitHub as two discrete events:
     1. Remove the existing milestone
     2. Add a new one
@@ -230,7 +223,7 @@ def process_label_event_info(payload):
     action = payload.get('action')
     label_name = payload.get('label')['name']
     prior_name = payload.get('changes').get('name', None)
-    if prior_name is not None:
+    if prior_name:
         prior_name = payload.get('changes')['name']['from']
         name_edited = True
     if action == 'created':
@@ -250,7 +243,7 @@ def process_milestone_event_info(payload):
     action = payload.get('action')
     milestone_title = payload.get('milestone')['title']
     prior_title = payload.get('changes').get('title', None)
-    if prior_title is not None:
+    if prior_title:
         title_edited = True
     if action == 'created':
         milestone = Milestone(milestone_title)
