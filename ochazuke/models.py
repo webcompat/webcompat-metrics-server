@@ -70,28 +70,28 @@ class Issue(db.Model):
     """Define an issue object and establish table fields/properties.
 
     An issue has as a unique id number assigned by GitHub.
-    An issue also has a header (e.g., 'google.com - design is broken'),
+    An issue also has a title (e.g., 'google.com - design is broken'),
     a creation date and time (UTC, as recorded by GitHub),
-    a milestone (usually),
+    a milestone (initially assigned during or directly after creation),
     zero, one, or more labels,
     and can be set as open or not open.
     An issue can also have zero, one, or more events (i.e., issues have a
     one-to-many relationship with events).
     """
     id = db.Column(postgresql.INTEGER, primary_key=True, unique=True)
-    header = db.Column(postgresql.TEXT, nullable=False)
+    title = db.Column(postgresql.TEXT, nullable=False)
     created_at = db.Column(postgresql.TIMESTAMP(timezone=True), nullable=False)
     milestone_id = db.Column(postgresql.INTEGER, db.ForeignKey(
         'milestone.id'))
     is_open = db.Column(postgresql.BOOLEAN, nullable=False)
     events = db.relationship('Event', backref='issue', lazy=True)
 
-    def __init__(self, id, header, created_at, milestone_id, is_open=True):
-        """Initialize an issue with its github number, header (title),
-        creation date, milestone id, and status (defaults to open).
+    def __init__(self, id, title, created_at, milestone_id, is_open=True):
+        """Initialize an issue with its github number, title, creation date,
+        milestone id, and status (defaults to open).
         """
         self.id = id
-        self.header = header
+        self.title = title
         self.created_at = created_at
         self.milestone_id = milestone_id
         self.is_open = is_open
@@ -110,8 +110,8 @@ class Event(db.Model):
     an actor (i.e., the user who performed the event action),
     an action -- what the event was (e.g., 'demilestoned' or 'closed'),
     details -- json data for any specifics (labeling/milestoning events:
-    the name/title of the label/milestone applied or removed, heading edits:
-    the old and new heading strings, closed or re-opened: none/null), and
+    the name/title of the label/milestone applied or removed, issue title
+    edits: the old and new title strings, closed or re-opened: none/null), and
     an update timestamp (when the event occurred) in UTC, recorded by GitHub.
     """
     id = db.Column(postgresql.INTEGER, primary_key=True, unique=True)
