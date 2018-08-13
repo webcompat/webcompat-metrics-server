@@ -11,7 +11,11 @@ import logging
 import sqlalchemy
 
 import ochazuke
-from ochazuke.models import db, Milestone, Label, Issue, Event
+from ochazuke.models import db
+from ochazuke.models import Milestone
+from ochazuke.models import Label
+from ochazuke.models import Issue
+from ochazuke.models import Event
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +57,9 @@ def is_desirable_issue_event(action, changes):
                   'milestoned', 'unmilestoned']:
         return True
     # We don't care about issue body edits since we only store titles
-    elif (action == 'edited') and changes.get('title'):
-        return True
+    elif (action == 'edited') and changes:
+        if changes.get('title'):
+            return True
     # We don't know what this is, but we might want to find out
     elif action not in ['assigned', 'unassigned', 'edited']:
         msg = 'Hey, GitHub sent a funky issues-event action: {act}'.format(
@@ -65,9 +70,7 @@ def is_desirable_issue_event(action, changes):
 
 def extract_issue_event_info(payload, action, changes):
     """Extract information we need when handling webhook for issue events."""
-    # Extract the event-specific info and make our own timestamp
-    # event_timestamp = datetime.utcnow().isoformat(timespec='seconds') + 'Z'
-    milestone = payload.get('issue')['milestone']
+    milestone = payload['issue']['milestone']
     # If there is no milestone data, let title be None
     if milestone:
         milestone_title = milestone.get('title')
@@ -80,19 +83,18 @@ def extract_issue_event_info(payload, action, changes):
             if changes.get('title'):
                 details = {'old title': changes['title']['from']}
     elif action == ('milestoned' or 'demilestoned'):
-        details = {'milestone title': payload.get(
-            'issue')['milestone']['title']}
+        details = {'milestone title': payload['issue']['milestone']['title']}
     else:
-        details = {'label name': payload.get('label')['name']}
+        details = {'label name': payload['label']['name']}
     # Create a concise issue event dictionary
-    issue_event_info = {'issue_id': payload.get('issue')['number'],
-                        'header': payload.get('issue')['title'],
-                        'created_at': payload.get('issue')['created_at'],
+    issue_event_info = {'issue_id': payload['issue']['number'],
+                        'title': payload['issue']['title'],
+                        'created_at': payload['issue']['created_at'],
                         'milestone': milestone_title,
-                        'actor': payload.get('sender')['login'],
+                        'actor': payload['sender']['login'],
                         'action': action,
                         'details': details,
-                        'received_at': payload.get('issue')['updated_at']
+                        'received_at': payload['issue']['updated_at']
                         }
     return issue_event_info
 
@@ -102,7 +104,7 @@ def update_db(info, action):
     if action == 'opened':
         add_new_issue(info)
     elif action == 'edited':
-        issue_header_edit(info)
+        issue_title_edit(info)
     elif action == ('closed' or 'reopened'):
         issue_status_change(info, action)
     elif action == ('milestoned' or 'unmilestoned'):
@@ -118,15 +120,16 @@ def add_new_issue(info):
 
     When a new issue is opened, we insert it into our issue table, including:
     - github number (int, 'id')
-    - title (text, 'header')
-    - status (boolean, 'is_open')
+    - title (text, 'title')
     - creation timestamp ('created_at')
     - milestone id number (int, 'milestone_id')
+    - status (boolean, 'is_open', defaults to True)
     """
-    milestone_title = info.get('milestone')
-    milestone = Milestone.query.filter_by(milestone_title)
-    bug = Issue(info.get('issue_id'), info.get('header'),
-                info.get('created_at'), milestone_id=milestone.id)
+    milestone_title = info['milestone']
+    if milestone_title:
+        milestone = Milestone.query.filter_by(milestone_title)
+    bug = Issue(info['issue_id'], info['title'], info['created_at'],
+                milestone.id)
     # Add issue to session staging
     db.session.add(bug)
     try:
@@ -151,11 +154,11 @@ def add_new_event(info):
     - username of user who triggered the event (text, 'actor')
     - what the event was (text, 'action')
     - any relevant details (json, 'details') -- see models.Event
-    - when we received the event (timestamp, 'received_at')
+    - when the event occurred (timestamp, 'received_at')
     We assign each event a unique id automatically upon insertion to the db.
     """
-    event = Event(info.get('issue_id'), info.get('actor'), info.get('action'),
-                  info.get('details'), info.get('received_at'))
+    event = Event(info['issue_id'], info['actor'], info['action'],
+                  info['details'], info['received_at'])
     # Add event to staging
     db.session.add(event)
     try:
@@ -172,18 +175,18 @@ def add_new_event(info):
         logger.warning(msg)
 
 
-def issue_header_edit(info):
-    """Update issue table with edited header text."""
+def issue_title_edit(info):
+    """Update issue table with edited title text."""
     # Fetch existing issue from issue table
-    bug = Issue.query.get(info.get('issue_id'))
-    # Update header and commit changes
-    bug.header = info.get('header')
+    bug = Issue.query.get(info['issue_id'])
+    # Update title and commit changes
+    bug.title = info['title']
     db.session.commit()
 
 
 def issue_status_change(info, action):
     """Toggle an issue's 'is_open' status in table between true and false."""
-    bug = Issue.query.get(info.get('issue_id'))
+    bug = Issue.query.get(info['issue_id'])
     status = {'closed': False, 'reopened': True}
     bug.is_open = status[action]
     db.session.commit()
@@ -198,20 +201,20 @@ def issue_milestone_change(info):
     As a result, an issue can exist (very briefly) in a temporary
     non-milestoned state between the firing of the first event and the second.
     """
-    issue = Issue.query.get(info.get('issue_id'))
-    if info.get('action') == 'milestoned':
-        issue.milestone = info.get('milestone_id')
+    issue = Issue.query.get(info['issue_id'])
+    if info['action'] == 'milestoned':
+        issue.milestone_id = info['milestone_id']
     else:
-        issue.milestone = None
+        issue.milestone_id = None
     db.session.commit()
 
 
 def issue_label_change(info):
     """Add or remove an issue label after an issue label event."""
-    label_name = info.get('details')['label name']
+    label_name = info['details']['label name']
     label_id = Label.query.filter_by(name=label_name).one().id
-    issue = Issue.query.get(info.get('issue_id'))
-    if info.get('action') == 'labeled':
+    issue = Issue.query.get(info['issue_id'])
+    if info['action'] == 'labeled':
         issue.labels.append(label_id)
     else:
         issue.labels.remove(label_id)
@@ -220,16 +223,15 @@ def issue_label_change(info):
 
 def process_label_event_info(payload):
     """Extract necessary information from webhook for label events."""
-    action = payload.get('action')
-    label_name = payload.get('label')['name']
-    prior_name = payload.get('changes').get('name', None)
-    if prior_name:
-        prior_name = payload.get('changes')['name']['from']
-        name_edited = True
+    action = payload['action']
+    label_name = payload['label']['name']
+    prior_name = None
+    if 'changes' in payload:
+        prior_name = payload['changes']['name']['from']
     if action == 'created':
         label = Label(label_name)
         db.session.add(label)
-    elif (action == 'edited') and name_edited:
+    elif prior_name:
         label = Label.query.filter_by(name=prior_name)
         label.name = label_name
     else:
@@ -240,15 +242,15 @@ def process_label_event_info(payload):
 
 def process_milestone_event_info(payload):
     """Extract necessary information from webhook for milestone events."""
-    action = payload.get('action')
-    milestone_title = payload.get('milestone')['title']
-    prior_title = payload.get('changes').get('title', None)
-    if prior_title:
-        title_edited = True
+    action = payload['action']
+    milestone_title = payload['milestone']['title']
+    prior_title = None
+    if 'changes' in payload:
+        prior_title = payload['changes']['title']
     if action == 'created':
         milestone = Milestone(milestone_title)
         db.session.add(milestone)
-    elif (action == 'edited') and title_edited:
+    elif prior_title:
         milestone = Milestone.query.filter_by(title=prior_title)
         milestone.title = milestone_title
     else:

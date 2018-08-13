@@ -37,7 +37,7 @@ def issues_hooklistener():
     By default, we return a 403 HTTP response.
     """
     if not is_github_hook(request):
-        return ('Move along, nothing to see here', 401, )
+        return ('Move along, nothing to see here', 401, TEXT_PLAIN)
     event_type = request.headers.get('X-GitHub-Event')
     try:
         payload = json.loads(request.data)
