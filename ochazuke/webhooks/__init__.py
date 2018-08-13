@@ -18,7 +18,12 @@ from flask import request
 from ochazuke.webhooks.helpers import is_github_hook
 from ochazuke.webhooks.helpers import is_desirable_issue_event
 from ochazuke.webhooks.helpers import extract_issue_event_info
-from ochazuke.webhooks.helpers import update_db
+from ochazuke.webhooks.helpers import add_new_issue
+from ochazuke.webhooks.helpers import add_new_event
+from ochazuke.webhooks.helpers import issue_title_edit
+from ochazuke.webhooks.helpers import issue_status_change
+from ochazuke.webhooks.helpers import issue_milestone_change
+from ochazuke.webhooks.helpers import issue_label_change
 from ochazuke.webhooks.helpers import process_label_event_info
 from ochazuke.webhooks.helpers import process_milestone_event_info
 
@@ -53,7 +58,17 @@ def issues_hooklistener():
             # Extract relevant info to update issue and event tables.
             issue_event_info = extract_issue_event_info(payload, action,
                                                         changes)
-            update_db(issue_event_info, action)
+            if action == 'opened':
+                add_new_issue(issue_event_info)
+            elif action == 'edited':
+                issue_title_edit(issue_event_info)
+            elif action == ('closed' or 'reopened'):
+                issue_status_change(issue_event_info, action)
+            elif action == ('milestoned' or 'unmilestoned'):
+                issue_milestone_change(issue_event_info)
+            elif action == ('labeled' or 'unlabeled'):
+                issue_label_change(issue_event_info)
+            add_new_event(issue_event_info)
             return ('Yay! Data! *munch, munch, munch*', 200, TEXT_PLAIN)
         else:
             # We acknowledge receipt for events that we don't process.

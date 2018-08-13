@@ -79,10 +79,11 @@ def extract_issue_event_info(payload, action, changes):
         milestone_title = milestone.get('title')
     else:
         milestone_title = None
-    # Let details be None for opening/closing, but preserve old title on edits
     if action in ['opened', 'closed', 'reopened', 'edited']:
+        # Details attribute is stored in events table for extra event context
         details = None
         if changes:
+            # Details are None for opening/closing, store old title on edits
             if changes.get('title'):
                 details = {'old title': changes['title']['from']}
     elif action == ('milestoned' or 'demilestoned'):
@@ -100,22 +101,6 @@ def extract_issue_event_info(payload, action, changes):
                         'received_at': payload['issue']['updated_at']
                         }
     return issue_event_info
-
-
-def update_db(info, action):
-    """Route extracted data to the appropriate handler for the event type."""
-    if action == 'opened':
-        add_new_issue(info)
-    elif action == 'edited':
-        issue_title_edit(info)
-    elif action == ('closed' or 'reopened'):
-        issue_status_change(info, action)
-    elif action == ('milestoned' or 'unmilestoned'):
-        issue_milestone_change(info)
-    elif action == ('labeled' or 'unlabeled'):
-        issue_label_change(info)
-    # Store all new desirable valid events
-    add_new_event(info)
 
 
 def add_new_issue(info):
@@ -202,9 +187,12 @@ def process_label_event_info(payload):
     """Extract necessary information from webhook for label events."""
     action = payload['action']
     label_name = payload['label']['name']
+    changes = payload.get('changes')
     prior_name = None
-    if 'changes' in payload:
-        prior_name = payload['changes']['name']['from']
+    if changes:
+        # Changes to label color also sent - as ['changes']['color']['from']
+        if changes.get('name'):
+            prior_name = payload['changes']['name']['from']
     if action == 'created':
         label = Label(label_name)
         make_change_to_database(ADD, label)
@@ -221,9 +209,12 @@ def process_milestone_event_info(payload):
     """Extract necessary information from webhook for milestone events."""
     action = payload['action']
     milestone_title = payload['milestone']['title']
+    changes = payload.get('changes')
     prior_title = None
-    if 'changes' in payload:
-        prior_title = payload['changes']['title']
+    if changes:
+        # Two other possible changes keys - ['description'] and ['due_on']
+        if changes.get('title'):
+            prior_title = payload['changes']['title']
     if action == 'created':
         milestone = Milestone(milestone_title)
         make_change_to_database(ADD, milestone)
