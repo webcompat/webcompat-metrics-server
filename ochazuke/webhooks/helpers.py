@@ -18,6 +18,9 @@ from ochazuke.models import Issue
 from ochazuke.models import Event
 
 logger = logging.getLogger(__name__)
+ADD = 'Add'
+REMOVE = 'Remove'
+UPDATE = 'Update'
 
 
 def get_payload_signature(key, payload):
@@ -130,20 +133,7 @@ def add_new_issue(info):
         milestone = Milestone.query.filter_by(milestone_title)
     bug = Issue(info['issue_id'], info['title'], info['created_at'],
                 milestone.id)
-    # Add issue to session staging
-    db.session.add(bug)
-    try:
-        # Perform the actual insertion to the database
-        db.session.commit()
-        msg = 'New issue ({iss}) successfully added to database.'.format(
-            iss=bug)
-        logger.info(msg)
-        # Catch an error and attempt to recover by backing out of the 'add'.
-    except sqlalchemy.exc.SQLAlchemyError as error:
-        db.session.rollback()
-        msg = 'Yikes! Failed to add issue to database: {err}'.format(
-            err=error)
-        logger.warning(msg)
+    make_change_to_database(ADD, bug)
 
 
 def add_new_event(info):
@@ -159,20 +149,7 @@ def add_new_event(info):
     """
     event = Event(info['issue_id'], info['actor'], info['action'],
                   info['details'], info['received_at'])
-    # Add event to staging
-    db.session.add(event)
-    try:
-        # Perform the actual insertion to the event table
-        db.session.commit()
-        msg = 'New event ({evg}) successfully added to database.'.format(
-            evt=event)
-        logger.info(msg)
-        # Catch an error and attempt to recover by backing out of the 'add'.
-    except sqlalchemy.exc.SQLAlchemyError as error:
-        db.session.rollback()
-        msg = 'Yikes! Failed to add event to database: {err}'.format(
-            err=error)
-        logger.warning(msg)
+    make_change_to_database(ADD, event)
 
 
 def issue_title_edit(info):
@@ -181,7 +158,7 @@ def issue_title_edit(info):
     bug = Issue.query.get(info['issue_id'])
     # Update title and commit changes
     bug.title = info['title']
-    db.session.commit()
+    make_change_to_database(UPDATE, bug)
 
 
 def issue_status_change(info, action):
@@ -189,7 +166,7 @@ def issue_status_change(info, action):
     bug = Issue.query.get(info['issue_id'])
     status = {'closed': False, 'reopened': True}
     bug.is_open = status[action]
-    db.session.commit()
+    make_change_to_database(UPDATE, bug)
 
 
 def issue_milestone_change(info):
@@ -206,7 +183,7 @@ def issue_milestone_change(info):
         issue.milestone_id = info['milestone_id']
     else:
         issue.milestone_id = None
-    db.session.commit()
+    make_change_to_database(UPDATE, issue)
 
 
 def issue_label_change(info):
@@ -218,7 +195,7 @@ def issue_label_change(info):
         issue.labels.append(label_id)
     else:
         issue.labels.remove(label_id)
-    db.session.commit()
+    make_change_to_database(UPDATE, issue)
 
 
 def process_label_event_info(payload):
@@ -230,14 +207,14 @@ def process_label_event_info(payload):
         prior_name = payload['changes']['name']['from']
     if action == 'created':
         label = Label(label_name)
-        db.session.add(label)
+        make_change_to_database(ADD, label)
     elif prior_name:
         label = Label.query.filter_by(name=prior_name)
         label.name = label_name
+        make_change_to_database(UPDATE, label)
     else:
         label = Label.query.filter_by(name=label_name)
-        db.session.remove(label)
-    db.session.commit()
+        make_change_to_database(REMOVE, label)
 
 
 def process_milestone_event_info(payload):
@@ -249,11 +226,30 @@ def process_milestone_event_info(payload):
         prior_title = payload['changes']['title']
     if action == 'created':
         milestone = Milestone(milestone_title)
-        db.session.add(milestone)
+        make_change_to_database(ADD, milestone)
     elif prior_title:
         milestone = Milestone.query.filter_by(title=prior_title)
         milestone.title = milestone_title
+        make_change_to_database(UPDATE, milestone)
     else:
         milestone = Milestone.query.filter_by(title=milestone_title)
-        db.session.remove(milestone)
-    db.session.commit()
+        make_change_to_database(REMOVE, milestone)
+
+
+def make_change_to_database(operation, item):
+    """Attempt to write change to database and handle any resulting errors."""
+    if operation == ADD:
+        db.session.add(item)
+    elif operation == REMOVE:
+        db.session.remove(item)
+    try:
+        db.session.commit()
+        msg = 'Successfully wrote {op}: {itm} to database.'.format(
+            op=operation, itm=item)
+        logger.info(msg)
+        # Catch error and attempt to recover by reseting staged changes.
+    except sqlalchemy.exc.SQLAlchemyError as error:
+        db.session.rollback()
+        msg = 'Yikes! Failed to write {op}: {itm} to database: {err}'.format(
+            op=operation, itm=item, err=error)
+        logger.warning(msg)
