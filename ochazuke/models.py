@@ -86,7 +86,7 @@ class Issue(db.Model):
     is_open = db.Column(postgresql.BOOLEAN, nullable=False)
     events = db.relationship('Event', backref='issue', lazy=True)
 
-    def __init__(self, id, title, created_at, milestone_id, is_open=True):
+    def __init__(self, id, title, created_at, milestone_id=None, is_open=True):
         """Initialize an issue with its github number, title, creation date,
         milestone id, and status (defaults to open).
         """
