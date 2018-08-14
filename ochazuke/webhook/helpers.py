@@ -115,9 +115,11 @@ def add_new_issue(info):
     """
     milestone_title = info['milestone']
     if milestone_title:
-        milestone = Milestone.query.filter_by(milestone_title)
+        milestone_id = get_milestone_by_title(milestone_title).id
+    else:
+        milestone_id = None
     bug = Issue(info['issue_id'], info['title'], info['created_at'],
-                milestone.id)
+                milestone_id)
     make_change_to_database(ADD, bug)
 
 
@@ -139,16 +141,14 @@ def add_new_event(info):
 
 def issue_title_edit(info):
     """Update issue table with edited title text."""
-    # Fetch existing issue from issue table
-    bug = Issue.query.get(info['issue_id'])
-    # Update title and commit changes
+    bug = get_issue_by_id(info['issue_id'])
     bug.title = info['title']
     make_change_to_database(UPDATE, bug)
 
 
 def issue_status_change(info, action):
     """Toggle an issue's 'is_open' status in table between true and false."""
-    bug = Issue.query.get(info['issue_id'])
+    bug = get_issue_by_id(info['issue_id'])
     status = {'closed': False, 'reopened': True}
     bug.is_open = status[action]
     make_change_to_database(UPDATE, bug)
@@ -163,9 +163,10 @@ def issue_milestone_change(info):
     As a result, an issue can exist (very briefly) in a temporary
     non-milestoned state between the firing of the first event and the second.
     """
-    issue = Issue.query.get(info['issue_id'])
+    issue = get_issue_by_id(info['issue_id'])
     if info['action'] == 'milestoned':
-        issue.milestone_id = info['milestone_id']
+        milestone = get_milestone_by_title(info['milestone'])
+        issue.milestone_id = milestone.id
     else:
         issue.milestone_id = None
     make_change_to_database(UPDATE, issue)
@@ -174,12 +175,12 @@ def issue_milestone_change(info):
 def issue_label_change(info):
     """Add or remove an issue label after an issue label event."""
     label_name = info['details']['label name']
-    label_id = Label.query.filter_by(name=label_name).one().id
-    issue = Issue.query.get(info['issue_id'])
+    label = get_label_by_name(label_name)
+    issue = get_issue_by_id(info['issue_id'])
     if info['action'] == 'labeled':
-        issue.labels.append(label_id)
+        issue.labels.append(label)
     else:
-        issue.labels.remove(label_id)
+        issue.labels.remove(label)
     make_change_to_database(UPDATE, issue)
 
 
@@ -197,11 +198,11 @@ def process_label_event_info(payload):
         label = Label(label_name)
         make_change_to_database(ADD, label)
     elif prior_name:
-        label = Label.query.filter_by(name=prior_name)
+        label = get_label_by_name(prior_name)
         label.name = label_name
         make_change_to_database(UPDATE, label)
-    else:
-        label = Label.query.filter_by(name=label_name)
+    elif action == 'deleted':
+        label = get_label_by_name(label_name)
         make_change_to_database(REMOVE, label)
 
 
@@ -219,12 +220,60 @@ def process_milestone_event_info(payload):
         milestone = Milestone(milestone_title)
         make_change_to_database(ADD, milestone)
     elif prior_title:
-        milestone = Milestone.query.filter_by(title=prior_title)
+        milestone = get_milestone_by_title(prior_title)
         milestone.title = milestone_title
         make_change_to_database(UPDATE, milestone)
-    else:
-        milestone = Milestone.query.filter_by(title=milestone_title)
+    elif action == 'deleted':
+        milestone = get_milestone_by_title(milestone_title)
         make_change_to_database(REMOVE, milestone)
+
+
+def get_issue_by_id(id):
+    """Return an issue object from its id and handle any errors."""
+    issue = None
+    try:
+        issue = Issue.query.filter_by(id=id).one()
+    except sqlalchemy.orm.exc.NoResultsFound as error:
+        msg = 'Yikes! No issue found for id #{id_num}! ({err})'.format(
+            id_num=id, err=error)
+        logger.warning(msg)
+    except sqlalchemy.orm.exc.MultipleResultsFound as error:
+        msg = 'Yikes! Multiple issues found for id #{id_num}! ({err})'.format(
+            id_num=id, err=error)
+        logger.warning(msg)
+    return issue
+
+
+def get_label_by_name(name):
+    """Return a label object from its name and handle any errors."""
+    label = None
+    try:
+        label = Label.query.filter_by(name=name).one()
+    except sqlalchemy.orm.exc.NoResultFound as error:
+        msg = 'Yikes! No label found for: {name}! ({err})'.format(
+            name=name, err=error)
+        logger.warning(msg)
+    except sqlalchemy.orm.exc.MultipleResultsFound as error:
+        msg = 'Yikes! Multiple labels found for: {name}! ({err})'.format(
+            name=name, err=error)
+        logger.warning(msg)
+    return label
+
+
+def get_milestone_by_title(title):
+    """Return a milestone object from its title and handle any errors."""
+    milestone = None
+    try:
+        milestone = Milestone.query.filter_by(title=title).one()
+    except sqlalchemy.orm.exc.NoResultFound as error:
+        msg = 'Yikes! No milestone found for: {title}! ({err})'.format(
+            title=title, err=error)
+        logger.warning(msg)
+    except sqlalchemy.orm.exc.MultipleResultsFound as error:
+        msg = 'Yikes! Multiple milestones found for: {title}! ({err})'.format(
+            title=title, err=error)
+        logger.warning(msg)
+    return milestone
 
 
 def make_change_to_database(operation, item):

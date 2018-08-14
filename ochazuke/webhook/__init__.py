@@ -15,17 +15,17 @@ import logging
 from flask import Blueprint
 from flask import request
 
-from ochazuke.webhooks.helpers import is_github_hook
-from ochazuke.webhooks.helpers import is_desirable_issue_event
-from ochazuke.webhooks.helpers import extract_issue_event_info
-from ochazuke.webhooks.helpers import add_new_issue
-from ochazuke.webhooks.helpers import add_new_event
-from ochazuke.webhooks.helpers import issue_title_edit
-from ochazuke.webhooks.helpers import issue_status_change
-from ochazuke.webhooks.helpers import issue_milestone_change
-from ochazuke.webhooks.helpers import issue_label_change
-from ochazuke.webhooks.helpers import process_label_event_info
-from ochazuke.webhooks.helpers import process_milestone_event_info
+from ochazuke.webhook.helpers import is_github_hook
+from ochazuke.webhook.helpers import is_desirable_issue_event
+from ochazuke.webhook.helpers import extract_issue_event_info
+from ochazuke.webhook.helpers import add_new_issue
+from ochazuke.webhook.helpers import add_new_event
+from ochazuke.webhook.helpers import issue_title_edit
+from ochazuke.webhook.helpers import issue_status_change
+from ochazuke.webhook.helpers import issue_milestone_change
+from ochazuke.webhook.helpers import issue_label_change
+from ochazuke.webhook.helpers import process_label_event_info
+from ochazuke.webhook.helpers import process_milestone_event_info
 
 logger = logging.getLogger(__name__)
 webhooks = Blueprint('webhooks', __name__, url_prefix='/webhooks')
@@ -56,8 +56,8 @@ def issues_hooklistener():
     if event_type == 'issues':
         if is_desirable_issue_event(action, changes):
             # Extract relevant info to update issue and event tables.
-            issue_event_info = extract_issue_event_info(payload, action,
-                                                        changes)
+            issue_event_info = extract_issue_event_info(
+                payload, action, changes)
             if action == 'opened':
                 add_new_issue(issue_event_info)
             elif action == 'edited':
