@@ -11,9 +11,6 @@
         "assignee": null,
         "assignees": [],
         "milestone": {
-            "url": "https://api.github.com/repos/laghee/test-repo/milestones/5",
-            "html_url": "https://github.com/laghee/test-repo/milestone/5",
-            "labels_url": "https://api.github.com/repos/laghee/test-repo/milestones/5/labels",
             "id": 3423454,
             "node_id": "MDk6TWlsZXN0b25lMzQyMzQ1NA==",
             "number": 5,
