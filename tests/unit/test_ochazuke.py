@@ -108,7 +108,7 @@ class OchazukeTestCase(unittest.TestCase):
         """Given from_date and to_date, return a number of days."""
         from_date = '2018-01-02'
         to_date = '2018-01-04'
-        days = ['2018-01-02', '2018-01-03']
+        days = ['2018-01-02', '2018-01-03', '2018-01-04']
         self.assertCountEqual(helpers.get_days(from_date, to_date), days)
         self.assertCountEqual(helpers.get_days(to_date, from_date), days)
 
