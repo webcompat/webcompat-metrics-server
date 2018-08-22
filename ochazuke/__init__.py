@@ -46,8 +46,13 @@ def create_app(test_config=None):
     app.config['HOOK_SECRET_KEY'] = os.environ.get('HOOK_SECRET_KEY')
 
     # configure the postgresql database
-    # fetch the environment variable for the database location
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+    if test_config is None:
+        # fetch the environmental variable for the database location
+        database_url = os.environ.get('DATABASE_URL')
+    else:
+        # use the local database for testing
+        database_url = 'postgresql://localhost/metrics'
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
 
