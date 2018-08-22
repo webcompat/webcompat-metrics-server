@@ -23,12 +23,16 @@ class Milestone(db.Model):
     title = db.Column(postgresql.TEXT, unique=True, nullable=False)
     issues = db.relationship('Issue', backref='milestone', lazy=True)
 
-    # string representation of a milestone is its id followed by title
+    def __init__(self, title):
+        """Initialize a milestone with its title."""
+        self.title = title
+
     def __repr__(self):
+        """Return a milestone as a string of its id followed by its title."""
         return '<Milestone {}: {}>'.format(self.id, self.title)
 
 
-# define a table to handle the many-to-many link of issues and labels
+# Define a table to facilitate the many-to-many link of issues and labels
 issue_labels = db.Table('issue_labels',
                         db.Column('issue_id',
                                   postgresql.INTEGER,
@@ -40,7 +44,6 @@ issue_labels = db.Table('issue_labels',
 
 
 class Label(db.Model):
-
     """Define a label object and establish table fields/properties.
 
     A label has as a unique table id assigned at insertion.
@@ -54,33 +57,47 @@ class Label(db.Model):
                                    lazy='subquery',
                                    backref=db.backref('labels', lazy=True))
 
-    # string representation of a label is its id and name
+    def __init__(self, name):
+        """Initialize a label with its name."""
+        self.name = name
+
     def __repr__(self):
+        """Return a label as a string of its table id followed by its name."""
         return '<Label {}: {}>'.format(self.id, self.name)
 
 
 class Issue(db.Model):
     """Define an issue object and establish table fields/properties.
 
-    An issue has as a unique id assigned by GitHub.
-    An issue also has a header (e.g., 'google.com - design is broken'),
+    An issue has as a unique id number assigned by GitHub.
+    An issue also has a title (e.g., 'google.com - design is broken'),
     a creation date and time (UTC, as recorded by GitHub),
-    a milestone (usually),
+    a milestone (initially assigned during or directly after creation),
     zero, one, or more labels,
     and can be set as open or not open.
     An issue can also have zero, one, or more events (i.e., issues have a
     one-to-many relationship with events).
     """
     id = db.Column(postgresql.INTEGER, primary_key=True, unique=True)
-    header = db.Column(postgresql.TEXT, nullable=False)
-    is_open = db.Column(postgresql.BOOLEAN, nullable=False)
+    title = db.Column(postgresql.TEXT, nullable=False)
     created_at = db.Column(postgresql.TIMESTAMP(timezone=True), nullable=False)
     milestone_id = db.Column(postgresql.INTEGER, db.ForeignKey(
         'milestone.id'))
+    is_open = db.Column(postgresql.BOOLEAN, nullable=False)
     events = db.relationship('Event', backref='issue', lazy=True)
 
-    # string representation of an issue is its id and creation timestamp
+    def __init__(self, id, title, created_at, milestone_id=None, is_open=True):
+        """Initialize an issue with its github number, title, creation date,
+        milestone id, and status (defaults to open).
+        """
+        self.id = id
+        self.title = title
+        self.created_at = created_at
+        self.milestone_id = milestone_id
+        self.is_open = is_open
+
     def __repr__(self):
+        """Return an issue as a string of its id followed by creation date."""
         return '<Issue {}: Filed {}>'.format(self.id, self.created_at)
 
 
@@ -93,12 +110,9 @@ class Event(db.Model):
     an actor (i.e., the user who performed the event action),
     an action -- what the event was (e.g., 'demilestoned' or 'closed'),
     details -- json data for any specifics (labeling/milestoning events:
-    the name/title of the label/milestone applied or removed, heading edits:
-    the old and new heading strings, closed or re-opened: none/null), and
-    a creation/receipt date and time in UTC (*here also it seems like GH
-    doesn't include a timestamp for when event occured so we may need to record
-    when we insert after receiving the webhook instead... OR decide that we
-    don't care since it can be retrieved later from the API*).
+    the name/title of the label/milestone applied or removed, issue title
+    edits: the old and new title strings, closed or re-opened: none/null), and
+    an update timestamp (when the event occurred) in UTC, recorded by GitHub.
     """
     id = db.Column(postgresql.INTEGER, primary_key=True, unique=True)
     issue_id = db.Column(postgresql.INTEGER, db.ForeignKey('issue.id'),
@@ -109,9 +123,19 @@ class Event(db.Model):
     received_at = db.Column(postgresql.TIMESTAMP(timezone=True),
                             nullable=False)
 
-    # string representation of an event is its id, its parent issue's id,
-    # the action taken, and timestamp of receipt from GitHub
+    def __init__(self, issue_id, actor, action, details, received_at):
+        """Initialize an event with an issue number, the actor, the action,
+        issue edit or milestone/label details (in json), and when it occurred.
+        """
+        self.issue_id = issue_id
+        self.actor = actor
+        self.action = action
+        self.details = details
+        self.received_at = received_at
+
     def __repr__(self):
+        """Return an event as a string of its table id, the issue it occurred
+        on, its action, and when it occurred."""
         return '<Event {} (Issue #{}): {} [{}] >'.format(self.id,
                                                          self.issue_id,
                                                          self.action,
