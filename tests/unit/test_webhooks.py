@@ -63,14 +63,16 @@ class TestWebhooks(unittest.TestCase):
         self.client = self.app.test_client()
         self.headers = {'content-type': 'application/json'}
         self.test_url = '/webhooks/ghevents'
-        self.info = {'issue_id': 2475,
-                     'title': 'Cannot log in to www.artisanalmustard.com!',
-                     'created_at': '2018-07-30T13:22:36Z',
-                     'milestone': 'needsdiagnosis',
-                     'actor': 'laghee',
-                     'action': 'edited',
-                     'details': None,
-                     'received_at': '2018-08-03T09:17:20Z'}
+        self.info = {
+            'issue_id': 2475,
+            'title': 'Cannot log in to www.artisanalmustard.example.com!',
+            'created_at': '2018-07-30T13:22:36Z',
+            'milestone': 'needsdiagnosis',
+            'actor': 'laghee',
+            'action': 'edited',
+            'details': None,
+            'received_at': '2018-08-03T09:17:20Z'
+        }
 
     def tearDown(self):
         """Tear down tests."""
@@ -173,14 +175,16 @@ class TestWebhooks(unittest.TestCase):
         payload = json.loads(json_event)
         action = payload['action']
         changes = payload['changes']
-        expected = {'issue_id': 2475,
-                    'title': 'Cannot log in to www.artisanalmustard.com!',
-                    'created_at': '2018-07-30T13:22:36Z',
-                    'milestone': 'needsdiagnosis',
-                    'actor': 'laghee',
-                    'action': 'edited',
-                    'details': None,
-                    'received_at': '2018-08-03T09:17:20Z'}
+        expected = {
+            'issue_id': 2475,
+            'title': 'Cannot log in to www.artisanalmustard.example.com!',
+            'created_at': '2018-07-30T13:22:36Z',
+            'milestone': 'needsdiagnosis',
+            'actor': 'laghee',
+            'action': 'edited',
+            'details': None,
+            'received_at': '2018-08-03T09:17:20Z'
+        }
         actual = helpers.extract_issue_event_info(payload, action, changes)
         self.assertDictEqual(expected, actual,
                              'Issue event info extracted correctly.')
@@ -203,7 +207,8 @@ class TestWebhooks(unittest.TestCase):
         self.assertIsInstance(issue_object, Issue)
         self.assertEqual(issue_object.id, 2475)
         self.assertEqual(
-            issue_object.title, 'Cannot log in to www.artisanalmustard.com!')
+            issue_object.title,
+            'Cannot log in to www.artisanalmustard.example.com!')
         self.assertEqual(issue_object.created_at, '2018-07-30T13:22:36Z')
         self.assertEqual(issue_object.milestone_id, 42)
 
@@ -243,14 +248,15 @@ class TestWebhooks(unittest.TestCase):
         self.assertIsInstance(issue_object, Issue)
         self.assertEqual(issue_object.id, 2475)
         self.assertEqual(issue_object.title,
-                         'Cannot log in to www.artisanalmustard.com!')
+                         'Cannot log in to www.artisanalmustard.example.com!')
 
     @patch('ochazuke.webhook.helpers.get_issue_by_id')
     @patch('ochazuke.webhook.helpers.make_change_to_database')
     def test_issue_status_change(self, mock_change, mock_get):
         """Successfully change an issue's status in the issue table."""
         # Status change to 'closed'
-        issue = Issue(2475, 'Cannot log in to www.artisanalmustard.com!',
+        issue = Issue(2475,
+                      'Cannot log in to www.artisanalmustard.example.com!',
                       '2018-07-30T13:22:36Z', 17)
         mock_get.return_value = issue
         self.info.update({'action': 'opened'})
@@ -280,7 +286,8 @@ class TestWebhooks(unittest.TestCase):
     def test_issue_milestone_change(self, mock_get_issue, mock_change):
         """Successfully change an issue's milestone in the issue table."""
         # Change on 'demilestoned' action
-        issue = Issue(2475, 'Cannot log in to www.artisanalmustard.com!',
+        issue = Issue(2475,
+                      'Cannot log in to www.artisanalmustard.example.com!',
                       '2018-07-30T13:22:36Z', 42)
         mock_get_issue.return_value = issue
         self.info.update({'action': 'demilestoned'})
@@ -318,7 +325,8 @@ class TestWebhooks(unittest.TestCase):
                                 mock_change):
         """Successfully change an issue's label in the issue table."""
         # Labeled event
-        issue = Issue(2475, 'Cannot log in to www.artisanalmustard.com!',
+        issue = Issue(2475,
+                      'Cannot log in to www.artisanalmustard.example.com!',
                       '2018-07-30T13:22:36Z', 42)
         old_label = Label('wut-idk')
         old_label.id = 8

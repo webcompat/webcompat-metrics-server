@@ -4,7 +4,7 @@
     "id": 345755642,
     "node_id": "MDU6SXNzdWUzNDU3NTU2NDI=",
     "number": 2475,
-    "title": "Cannot log in to www.artisanalmustard.com!",
+    "title": "Cannot log in to www.artisanalmustard.example.com!",
     "labels": [],
     "state": "open",
     "locked": false,
@@ -24,7 +24,7 @@
     "updated_at": "2018-08-03T09:17:20Z",
     "closed_at": null,
     "body":
-      "URL: www.artisanalmustard.com\r\nBrowser / Version: Firefox 61.0\r\nOperating System: Mac OS X 10.13\r\nProblem type: Log in is broken\r\n\r\nSteps to Reproduce\r\n\r\n    Navigate to: www.artisanalmustard.com\r\nTry to log in\r\n\r\nExpected Behavior:\r\nsuccessful login followed by copious mustardy goodness\r\n\r\nActual Behavior:\r\nno mustard for you"
+      "URL: www.artisanalmustard.example.com\r\nBrowser / Version: Firefox 61.0\r\nOperating System: Mac OS X 10.13\r\nProblem type: Log in is broken\r\n\r\nSteps to Reproduce\r\n\r\n    Navigate to: www.artisanalmustard.example.com\r\nTry to log in\r\n\r\nExpected Behavior:\r\nsuccessful login followed by copious mustardy goodness\r\n\r\nActual Behavior:\r\nno mustard for you"
   },
   "changes": {
     "body": {
