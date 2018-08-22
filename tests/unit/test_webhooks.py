@@ -13,7 +13,6 @@ from unittest.mock import patch
 import flask
 
 import ochazuke
-from ochazuke.models import db
 from ochazuke.models import Issue
 from ochazuke.models import Event
 from ochazuke.models import Milestone
@@ -58,8 +57,6 @@ class TestWebhooks(unittest.TestCase):
         # binds app to the current context
         self.app_context = self.app.app_context()
         self.app_context.push()
-        # create all the tables for testing
-        db.create_all()
         self.client = self.app.test_client()
         self.headers = {'content-type': 'application/json'}
         self.test_url = '/webhooks/ghevents'
@@ -76,8 +73,6 @@ class TestWebhooks(unittest.TestCase):
 
     def tearDown(self):
         """Tear down tests."""
-        db.session.remove()
-        db.drop_all()
         self.app_context.pop()
 
     def test_forbidden_get(self):
