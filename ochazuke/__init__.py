@@ -84,6 +84,20 @@ def create_app(test_config=None):
         response.headers.add('Vary', 'Origin')
         return response
 
+    @app.route('/data/weekly-counts')
+    def weekly_reports_data():
+        """Secondhand pipeline for returning weekly JSON data."""
+        json_weekly_data = get_remote_data(
+            'http://laghee.pythonanywhere.com/tmp/weekly_issues')
+        response = Response(
+            response=json_weekly_data,
+            status=200,
+            mimetype='application/json')
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Vary', 'Origin')
+        return response
+
     return app
 
 
