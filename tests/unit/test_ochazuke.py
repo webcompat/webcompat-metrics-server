@@ -70,7 +70,7 @@ class OchazukeTestCase(unittest.TestCase):
         self.assertEqual('true',
                          rv.headers['Access-Control-Allow-Credentials'])
 
-    @patch('ochazuke.get_weekly_data')
+    @patch('ochazuke.get_remote_data')
     def test_weeklydata(self, mock_get):
         """/data/weekly-counts sends back JSON."""
         mock_get.return_value = mocked_json(WEEKLY_DATA)

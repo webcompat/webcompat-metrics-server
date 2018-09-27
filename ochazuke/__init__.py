@@ -16,7 +16,6 @@ from flask import Response
 from ochazuke.helpers import get_json_slice
 from ochazuke.helpers import is_valid_args
 from tools.helpers import get_remote_data
-from tools.helpers import get_weekly_data
 from ochazuke.models import db
 from ochazuke.webhook import webhooks
 
@@ -88,7 +87,7 @@ def create_app(test_config=None):
     @app.route('/data/weekly-counts')
     def weekly_reports_data():
         """Secondhand pipeline for returning weekly JSON data."""
-        json_weekly_data = get_weekly_data(
+        json_weekly_data = get_remote_data(
             'http://laghee.pythonanywhere.com/tmp/weekly_issues')
         response = Response(
             response=json_weekly_data,

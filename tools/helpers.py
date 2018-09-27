@@ -13,13 +13,6 @@ def get_remote_data(url):
     """Request URL."""
     req = Request(url)
     req.add_header('User-agent', 'webcompatMonitor')
-    req.add_header('Accept', 'application/vnd.github.v3+json')
-    json_response = urlopen(req, timeout=240).read()
-    return json_response
-
-
-def get_weekly_data(url):
-    """Form Request object from URL and fetch weekly data."""
-    req = Request(url)
+    req.add_header('Accept', 'application/json')
     json_response = urlopen(req, timeout=240).read()
     return json_response
