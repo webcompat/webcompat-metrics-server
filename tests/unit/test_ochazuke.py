@@ -72,7 +72,7 @@ class OchazukeTestCase(unittest.TestCase):
 
     @patch('ochazuke.get_remote_data')
     def test_weeklydata(self, mock_get):
-        """/data/weekly-counts sends back JSON."""
+        """Send back on /data/weekly-counts a JSON."""
         mock_get.return_value = mocked_json(WEEKLY_DATA)
         rv = self.client.get('/data/weekly-counts')
         self.assertIn('"2016": [11, 19, 28]', rv.data.decode())
@@ -89,7 +89,7 @@ class OchazukeTestCase(unittest.TestCase):
 
     @patch('ochazuke.get_remote_data')
     def test_needsdiagnosis_valid_param(self, mock_get):
-        """valid parameters on /needsdiagnosis-timeline."""
+        """Valid parameters on /needsdiagnosis-timeline."""
         TIMELINE['timeline'] = DATA
         mock_get.return_value = mocked_json(TIMELINE)
         url = '/data/needsdiagnosis-timeline?from=2018-05-16&to=2018-05-18'
@@ -128,7 +128,7 @@ class OchazukeTestCase(unittest.TestCase):
             rv.data.decode())
 
     def test_date_range(self):
-        """Given from_date and to_date, return a number of days."""
+        """Given from_date and to_date, return a list of days."""
         from_date = '2018-01-02'
         to_date = '2018-01-04'
         days = ['2018-01-02', '2018-01-03', '2018-01-04']
@@ -136,13 +136,13 @@ class OchazukeTestCase(unittest.TestCase):
         self.assertCountEqual(helpers.get_days(to_date, from_date), days)
 
     def test_date_range_invalid(self):
-        """Given from_date and to_date, return a number of days."""
+        """Given an invalid date, return None for the range."""
         from_date = '2018-01-02T23:00'
         to_date = '2018-01-04'
         self.assertEqual(helpers.get_days(from_date, to_date), None)
 
     def test_date_range_same_day(self):
-        """Given from_date and to_date, return a number of days."""
+        """Given a same day range, return the one day range."""
         from_date = '2018-01-02'
         to_date = '2018-01-02'
         self.assertEqual(helpers.get_days(from_date, to_date), ['2018-01-02'])
@@ -150,33 +150,26 @@ class OchazukeTestCase(unittest.TestCase):
     def test_get_timeline_slice(self):
         """Given a list of dates, return the appropriate slice of data."""
         dates = ['2018-05-16', '2018-05-17']
-        sliced = [
-            {"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
-            {"count": "485", "timestamp": "2018-05-17T03:00:00Z"}
-            ]
+        sliced = [{"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
+                  {"count": "485", "timestamp": "2018-05-17T03:00:00Z"}]
         self.assertEqual(helpers.get_timeline_slice(DATA, dates), sliced)
 
     def test_get_timeline_slice_out_of_range(self):
         """Empty list if the dates list and the timeline do not match."""
         dates = ['2018-04-16']
-        full_list = [
-            {"count": "485", "timestamp": "2018-05-15T01:00:00Z"},
-            {"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
-            ]
+        full_list = [{"count": "485", "timestamp": "2018-05-15T01:00:00Z"},
+                     {"count": "485", "timestamp": "2018-05-16T02:00:00Z"}]
         self.assertEqual(helpers.get_timeline_slice(full_list, dates), [])
 
     def test_is_valid_args(self):
-        """Return True or False depending on the args"""
-        self.assertTrue(helpers.is_valid_args(
-            ImmutableMultiDict([('from', '2018-05-16'), ('to', '2018-05-18')]))
-            )
+        """Return True or False depending on the args."""
+        self.assertTrue(helpers.is_valid_args(ImmutableMultiDict(
+            [('from', '2018-05-16'), ('to', '2018-05-18')])))
         self.assertFalse(helpers.is_valid_args(ImmutableMultiDict([])))
-        self.assertFalse(helpers.is_valid_args(
-            ImmutableMultiDict([('bar', 'foo')]))
-            )
-        self.assertFalse(helpers.is_valid_args(
-            ImmutableMultiDict([('from', 'bar'), ('to', 'foo')]))
-            )
+        self.assertFalse(helpers.is_valid_args(ImmutableMultiDict(
+            [('bar', 'foo')])))
+        self.assertFalse(helpers.is_valid_args(ImmutableMultiDict(
+            [('from', 'bar'), ('to', 'foo')])))
 
 
 if __name__ == '__main__':
