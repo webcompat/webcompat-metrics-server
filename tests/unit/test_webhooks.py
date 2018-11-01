@@ -20,12 +20,8 @@ from ochazuke.models import Label
 from ochazuke.webhook import helpers
 
 
-# The key is for testing and computing the signature.
-key = ochazuke.app.config['HOOK_SECRET_KEY']
-
-
 # Some machinery for opening our fixture files for posting tests
-def event_data(filename):
+def event_data(filename, key):
     """Return a tuple with the content and its signature."""
     current_root = os.path.realpath(os.curdir)
     events_path = 'tests/fixtures/webhooks'
@@ -53,10 +49,12 @@ class TestWebhooks(unittest.TestCase):
 
     def setUp(self):
         """Set up tests."""
-        self.app = ochazuke.create_app(test_config={})
+        self.app = ochazuke.create_app(
+            test_config={'TESTING': True})
         # binds app to the current context
         self.app_context = self.app.app_context()
         self.app_context.push()
+        self.key = self.app.config['HOOK_SECRET_KEY']
         self.client = self.app.test_client()
         self.headers = {'content-type': 'application/json'}
         self.test_url = '/webhooks/ghevents'
@@ -90,7 +88,7 @@ class TestWebhooks(unittest.TestCase):
 
     def test_fail_on_bogus_signature(self):
         """POST with bogus signature on ghevents webhook is forbidden."""
-        json_event, signature = event_data('issue_body_edited.json')
+        json_event, signature = event_data('issue_body_edited.json', self.key)
         self.headers.update({'X-GitHub-Event': 'ping',
                              'X-Hub-Signature': 'Boo!'})
         response = self.client.post(self.test_url,
@@ -103,7 +101,7 @@ class TestWebhooks(unittest.TestCase):
     def test_fail_on_invalid_event_type(self):
         """POST with event other than 'issues', 'milestone', 'label', or
         'ping' fails."""
-        json_event, signature = event_data('issue_body_edited.json')
+        json_event, signature = event_data('issue_body_edited.json', self.key)
         self.headers.update({'X-GitHub-Event': 'failme',
                              'X-Hub-Signature': signature})
         response = self.client.post(self.test_url,
@@ -116,7 +114,7 @@ class TestWebhooks(unittest.TestCase):
 
     def test_success_on_ping_event(self):
         """POST with PING events just return a 200 and contains pong."""
-        json_event, signature = event_data('issue_body_edited.json')
+        json_event, signature = event_data('issue_body_edited.json', self.key)
         self.headers.update({'X-GitHub-Event': 'ping',
                              'X-Hub-Signature': signature})
         response = self.client.post(self.test_url,
@@ -127,7 +125,8 @@ class TestWebhooks(unittest.TestCase):
 
     def test_ignore_unknown_action(self):
         """POST with an unknown action fails."""
-        json_event, signature = event_data('issue_event_invalid_action.json')
+        json_event, signature = event_data('issue_event_invalid_action.json',
+                                           self.key)
         self.headers.update({'X-GitHub-Event': 'issues',
                              'X-Hub-Signature': signature})
         response = self.client.post(self.test_url,
@@ -140,7 +139,7 @@ class TestWebhooks(unittest.TestCase):
 
     def test_ignore_undesirable_issue_action(self):
         """Uninteresting issue actions are accepted but not processed."""
-        json_event, signature = event_data('issue_body_edited.json')
+        json_event, signature = event_data('issue_body_edited.json', self.key)
         self.headers.update({'X-GitHub-Event': 'issues',
                              'X-Hub-Signature': signature})
         response = self.client.post(self.test_url,
@@ -153,7 +152,7 @@ class TestWebhooks(unittest.TestCase):
 
     def test_ignore_unimportant_milestone_action(self):
         """Uninteresting milestone actions are accepted but not processed."""
-        json_event, signature = event_data('milestone_closed.json')
+        json_event, signature = event_data('milestone_closed.json', self.key)
         self.headers.update({'X-GitHub-Event': 'milestone',
                              'X-Hub-Signature': signature})
         response = self.client.post(self.test_url,
@@ -166,7 +165,7 @@ class TestWebhooks(unittest.TestCase):
 
     def test_extract_issue_event_info(self):
         """Extract the right information from an issue event."""
-        json_event, signature = event_data('issue_body_edited.json')
+        json_event, signature = event_data('issue_body_edited.json', self.key)
         payload = json.loads(json_event)
         action = payload['action']
         changes = payload['changes']
@@ -448,7 +447,7 @@ class TestWebhooks(unittest.TestCase):
 
     def test_is_github_hook(self):
         """Validation tests for GitHub Webhooks."""
-        json_event, signature = event_data('issue_body_edited.json')
+        json_event, signature = event_data('issue_body_edited.json', self.key)
         # Lack the X-GitHub-Event
         with self.client as client:
             headers = self.headers.copy()

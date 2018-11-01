@@ -25,9 +25,8 @@ UPDATE = 'Update'
 
 def get_payload_signature(key, payload):
     """Compute the payload signature given a key."""
-    key = key.encode('utf-8')
     # HMAC requires its key to be encoded bytes
-    mac = hmac.new(key, msg=payload, digestmod=hashlib.sha1)
+    mac = hmac.new(b'key', msg=payload, digestmod=hashlib.sha1)
     return mac.hexdigest()
 
 

@@ -25,6 +25,12 @@ DATA = [{"count": "485", "timestamp": "2018-05-15T01:00:00Z"},
         {"count": "485", "timestamp": "2018-05-18T04:00:00Z"},
         ]
 
+WEEKLY_DATA = {
+    "2015": [9, 7, 46],
+    "2016": [11, 19, 28],
+    "2017": [35, 29, 40]
+}
+
 
 def mocked_json(expected_data):
     """Prepare a json response when fed a dictionary."""
@@ -53,6 +59,23 @@ class OchazukeTestCase(unittest.TestCase):
         self.assertIn(
             '"about": "Hourly NeedsDiagnosis issues count"',
             rv.data.decode())
+        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(rv.mimetype, 'application/json')
+        self.assertTrue('Access-Control-Allow-Origin' in rv.headers.keys())
+        self.assertEqual('*', rv.headers['Access-Control-Allow-Origin'])
+        self.assertTrue('Vary' in rv.headers.keys())
+        self.assertEqual('Origin', rv.headers['Vary'])
+        self.assertTrue(
+            'Access-Control-Allow-Credentials' in rv.headers.keys())
+        self.assertEqual('true',
+                         rv.headers['Access-Control-Allow-Credentials'])
+
+    @patch('ochazuke.get_remote_data')
+    def test_weeklydata(self, mock_get):
+        """/data/weekly-counts sends back JSON."""
+        mock_get.return_value = mocked_json(WEEKLY_DATA)
+        rv = self.client.get('/data/weekly-counts')
+        self.assertIn('"2016": [11, 19, 28]', rv.data.decode())
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(rv.mimetype, 'application/json')
         self.assertTrue('Access-Control-Allow-Origin' in rv.headers.keys())

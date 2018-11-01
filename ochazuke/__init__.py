@@ -43,17 +43,18 @@ def create_app(test_config=None):
 
     app.register_blueprint(webhooks)
 
-    app.config['HOOK_SECRET_KEY'] = os.environ.get('HOOK_SECRET_KEY')
-
-    # configure the postgresql database
+    # configure the postgresql database & the github webhook secret key
     if test_config is None:
-        # fetch the environmental variable for the database location
+        # fetch the environment variables for the database and hook secret
         database_url = os.environ.get('DATABASE_URL')
+        hook_secret = os.environ.get('HOOK_SECRET_KEY')
     else:
-        # use the local database for testing
+        # use the local database for testing and a dummy secret
         database_url = 'postgresql://localhost/metrics'
+        hook_secret = 'SECRETS'
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['HOOK_SECRET_KEY'] = hook_secret
     db.init_app(app)
 
     # A route for starting
@@ -76,6 +77,20 @@ def create_app(test_config=None):
             )
         response = Response(
             response=json_data,
+            status=200,
+            mimetype='application/json')
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Vary', 'Origin')
+        return response
+
+    @app.route('/data/weekly-counts')
+    def weekly_reports_data():
+        """Secondhand pipeline for returning weekly JSON data."""
+        json_weekly_data = get_remote_data(
+            'http://laghee.pythonanywhere.com/tmp/weekly_issues')
+        response = Response(
+            response=json_weekly_data,
             status=200,
             mimetype='application/json')
         response.headers.add('Access-Control-Allow-Origin', '*')
