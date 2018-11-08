@@ -14,4 +14,4 @@ instance/
 
 # virtualenv
 .venv
-venv/
+venv/.env
