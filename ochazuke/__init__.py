@@ -89,6 +89,12 @@ def create_app(test_config=None):
         """Secondhand pipeline for returning weekly JSON data."""
         json_weekly_data = get_remote_data(
             'http://laghee.pythonanywhere.com/tmp/weekly_issues')
+        if is_valid_args(request.args):
+            json_weekly_data = get_json_slice(
+                json_weekly_data,
+                request.args.get('from'),
+                request.args.get('to')
+            )
         response = Response(
             response=json_weekly_data,
             status=200,
