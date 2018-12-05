@@ -91,7 +91,7 @@ def create_app(test_config=None):
             'http://laghee.pythonanywhere.com/tmp/weekly_issues')
         if is_valid_args(request.args):
             json_weekly_data = get_json_slice(
-                json_data,
+                json_weekly_data,
                 request.args.get('from'),
                 request.args.get('to')
             )
