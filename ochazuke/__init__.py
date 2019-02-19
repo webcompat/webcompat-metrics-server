@@ -17,7 +17,6 @@ from ochazuke.helpers import get_json_slice
 from ochazuke.helpers import is_valid_args
 from tools.helpers import get_remote_data
 from ochazuke.models import db
-from ochazuke.webhook import webhooks
 
 
 def create_app(test_config=None):
@@ -41,20 +40,15 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    app.register_blueprint(webhooks)
-
-    # configure the postgresql database & the github webhook secret key
+    # configure the postgresql database
     if test_config is None:
         # fetch the environment variables for the database and hook secret
         database_url = os.environ.get('DATABASE_URL')
-        hook_secret = os.environ.get('HOOK_SECRET_KEY')
     else:
         # use the local database for testing and a dummy secret
         database_url = 'postgresql://localhost/metrics'
-        hook_secret = 'SECRETS'
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['HOOK_SECRET_KEY'] = hook_secret
     db.init_app(app)
 
     # A route for starting
