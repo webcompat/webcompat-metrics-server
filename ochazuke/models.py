@@ -20,9 +20,9 @@ class DailyTotal(db.Model):
     * a count of the issues filed on this date
     """
 
-    id = db.Column(db.Integer, primary_key=True)
-    day = db.Column(db.DateTime, nullable=False)
-    count = db.Column(db.Integer, nullable=False)
+    id = db.Column(db.INTEGER, primary_key=True)
+    day = db.Column(db.DATETIME, nullable=False)
+    count = db.Column(db.INTEGER, nullable=False)
 
     def __repr__(self):
         """Return a representation of a DailyTotal."""
