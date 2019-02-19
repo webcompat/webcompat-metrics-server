@@ -28,3 +28,27 @@ class DailyTotal(db.Model):
         """Return a representation of a DailyTotal."""
         return "<DailyTotal for {day}: {count}".format(
             day=self.day, count=self.count)
+
+
+class IssuesCount(db.Model):
+    """Define a IssuesCount for milestone at a precise time.
+
+    An issues count has:
+
+    * a unique table id
+    * a timestamp representing the time the count has been done
+    * a count of the issues at this timestamp
+    * a milestone representing the category it belongs to
+    """
+    id = db.Column(db.INTEGER, primary_key=True)
+    timestamp = db.Column(db.DATETIME, nullable=False)
+    count = db.Column(db.INTEGER, nullable=False)
+    milestone = db.Column(db.String(15), nullable=False)
+
+    def __repr__(self):
+        """Representation of IssuesCount."""
+        return '<IssuesCount {timestamp} {count} {milestone}'.format(
+            timestamp=self.timestamp,
+            count=self.count,
+            milestone=self.milestone
+        )
