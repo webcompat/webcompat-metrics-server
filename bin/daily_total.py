@@ -16,6 +16,8 @@ from urllib.parse import urljoin
 from urllib.request import Request
 from urllib.request import urlopen
 
+from ochazuke.models import db
+from ochazuke.models import DailyTotal
 
 # Config
 SEARCH_URL = "https://api.github.com/search/"
@@ -63,11 +65,22 @@ def main():
             LOGGER.warning(msg)
             return
     # Format the data
-    data = "New issues on {yesterday}: {issue_count}".format(
-        yesterday=yesterday.isoformat(), issue_count=issue_count
-    )
-    # Log the data on the console
-    print(data)
+    yesterday = yesterday.isoformat()
+    count = issue_count
+    # Store the data in the database
+    total = DailyTotal(day=yesterday, count=count)
+    db.session.add(total)
+    try:
+        db.session.commit()
+        msg = "Successfully wrote {count} for {day} in DailyTotal table.".format(
+            count=count, day=yesterday)
+        LOGGER.info(msg)
+    # Catch error and attempt to recover by resetting staged changes.
+    except sqlalchemy.exc.SQLAlchemyError as error:
+        db.session.rollback()
+        msg = "Yikes! Failed to write data for {day} in DailyTotal.".format(
+            day=yesterday)
+        LOGGER.warning(msg)
 
 
 if __name__ == "__main__":
