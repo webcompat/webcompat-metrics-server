@@ -12,6 +12,7 @@ import logging
 import datetime
 import time
 import json
+import sqlalchemy
 from urllib.parse import urljoin
 from urllib.request import Request
 from urllib.request import urlopen
@@ -72,7 +73,7 @@ def main():
     db.session.add(total)
     try:
         db.session.commit()
-        msg = "Successfully wrote {count} for {day} in DailyTotal table.".format(
+        msg = "Successfully wrote {day} data in DailyTotal table.".format(
             count=count, day=yesterday)
         LOGGER.info(msg)
     # Catch error and attempt to recover by resetting staged changes.
