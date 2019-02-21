@@ -49,8 +49,9 @@ def main():
     # NOTE: This works as expected if script is scheduled in UTC
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)
+    yesterday = yesterday.isoformat()
     # Insert yesterday's date into search query in format: 2019-01-30
-    query = QUERY.format(yesterday=yesterday.isoformat())
+    query = QUERY.format(yesterday=yesterday)
     url = urljoin(SEARCH_URL, query)
     json_response = get_remote_file(url)
     issue_count = get_issue_count(json_response)
@@ -61,20 +62,17 @@ def main():
         if not issue_count:
             # On a second failure, log an error
             msg = "Daily count failed for {yesterday}!".format(
-                yesterday=yesterday.isoformat()
+                yesterday=yesterday
             )
             LOGGER.warning(msg)
             return
-    # Format the data
-    yesterday = yesterday.isoformat()
-    count = issue_count
     # Store the data in the database
-    total = DailyTotal(day=yesterday, count=count)
+    total = DailyTotal(day=yesterday, count=issue_count)
     db.session.add(total)
     try:
         db.session.commit()
         msg = "Successfully wrote {day} data in DailyTotal table.".format(
-            count=count, day=yesterday)
+            count=issue_count, day=yesterday)
         LOGGER.info(msg)
     # Catch error and attempt to recover by resetting staged changes.
     except sqlalchemy.exc.SQLAlchemyError as error:
