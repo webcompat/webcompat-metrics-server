@@ -12,10 +12,13 @@ import logging
 import datetime
 import time
 import json
+import sqlalchemy
 from urllib.parse import urljoin
 from urllib.request import Request
 from urllib.request import urlopen
 
+from ochazuke.models import db
+from ochazuke.models import DailyTotal
 
 # Config
 SEARCH_URL = "https://api.github.com/search/"
@@ -46,8 +49,9 @@ def main():
     # NOTE: This works as expected if script is scheduled in UTC
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)
+    yesterday = yesterday.isoformat()
     # Insert yesterday's date into search query in format: 2019-01-30
-    query = QUERY.format(yesterday=yesterday.isoformat())
+    query = QUERY.format(yesterday=yesterday)
     url = urljoin(SEARCH_URL, query)
     json_response = get_remote_file(url)
     issue_count = get_issue_count(json_response)
@@ -58,16 +62,24 @@ def main():
         if not issue_count:
             # On a second failure, log an error
             msg = "Daily count failed for {yesterday}!".format(
-                yesterday=yesterday.isoformat()
+                yesterday=yesterday
             )
             LOGGER.warning(msg)
             return
-    # Format the data
-    data = "New issues on {yesterday}: {issue_count}".format(
-        yesterday=yesterday.isoformat(), issue_count=issue_count
-    )
-    # Log the data on the console
-    print(data)
+    # Store the data in the database
+    total = DailyTotal(day=yesterday, count=issue_count)
+    db.session.add(total)
+    try:
+        db.session.commit()
+        msg = "Successfully wrote {day} data in DailyTotal table.".format(
+            count=issue_count, day=yesterday)
+        LOGGER.info(msg)
+    # Catch error and attempt to recover by resetting staged changes.
+    except sqlalchemy.exc.SQLAlchemyError as error:
+        db.session.rollback()
+        msg = "Yikes! Failed to write data for {day} in DailyTotal.".format(
+            day=yesterday)
+        LOGGER.warning(msg)
 
 
 if __name__ == "__main__":
