@@ -10,10 +10,14 @@ Get count of milestones data.
 import datetime
 import json
 import sys
+import sqlalchemy
+import logging
 from urllib.parse import urljoin
 from urllib.request import Request
 from urllib.request import urlopen
 
+from ochazuke.models import db
+from ochazuke.models import IssuesCount
 
 # Config
 URL_REPO = 'https://api.github.com/repos/webcompat/web-bugs/milestones/'
@@ -30,7 +34,8 @@ MILESTONES = {
     'worksforme': (10, 'closed'),
     'incomplete': (11, 'closed'),
     'fixed': (12, 'closed'),
-    }
+}
+LOGGER = logging.getLogger(__name__)
 
 
 def get_remote_file(url):
@@ -81,13 +86,28 @@ def main():
     issues_count = extract_issues_count(json_response, status)
     # Compute the date
     now = newtime(datetime.datetime.now().isoformat(timespec='seconds'))
-    # Format the data
-    data = 'MILESTONE {milestone}: {now} {issues_count}'.format(
-        now=now,
-        issues_count=issues_count,
+
+    # Store data in the database
+    iss_count = IssuesCount(
+        timestamp=now,
+        count=issues_count,
         milestone=milestone)
-    # code to log the data on the heroku console.
-    print(data)
+    db.session.add(iss_count)
+    try:
+        db.session.commit()
+        msg = ("Successfully wrote MILESTONE {milestone} count for {now} "
+               "to IssuesCount table.").format(
+            milestone=milestone,
+            now=now)
+        LOGGER.info(msg)
+    # Catch error and attempt to recover by resetting staged changes.
+    except sqlalchemy.exc.SQLAlchemyError as error:
+        db.session.rollback()
+        msg = ("Yikes! Failed to write MILESTONE {milestone} count for {now} "
+               "in IssuesCount table.").format(
+            milestone=milestone,
+            now=now)
+        LOGGER.warning(msg)
 
 
 if __name__ == "__main__":
