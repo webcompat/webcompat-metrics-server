@@ -80,8 +80,8 @@ def main():
         # Catch error and attempt to recover by resetting staged changes.
         except sqlalchemy.exc.SQLAlchemyError as error:
             db.session.rollback()
-            msg = ("Yikes! Failed to write data for {day} "
-                   "in DailyTotal table.").format(day=yesterday)
+            msg = ("Yikes! Failed to write data for {day} in "
+                   "DailyTotal table: {err}").format(day=yesterday, err=error)
             LOGGER.warning(msg)
 
 
