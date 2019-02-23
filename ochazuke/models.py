@@ -20,9 +20,9 @@ class DailyTotal(db.Model):
     * a count of the issues filed on this date
     """
 
-    id = db.Column(db.INTEGER, primary_key=True)
-    day = db.Column(db.DATETIME, nullable=False)
-    count = db.Column(db.INTEGER, nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    day = db.Column(db.DateTime, nullable=False)
+    count = db.Column(db.Integer, nullable=False)
 
     def __repr__(self):
         """Return a representation of a DailyTotal."""
@@ -40,9 +40,9 @@ class IssuesCount(db.Model):
     * a count of the issues at this timestamp
     * a milestone representing the category it belongs to
     """
-    id = db.Column(db.INTEGER, primary_key=True)
-    timestamp = db.Column(db.DATETIME, nullable=False)
-    count = db.Column(db.INTEGER, nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, nullable=False)
+    count = db.Column(db.Integer, nullable=False)
     milestone = db.Column(db.String(15), nullable=False)
 
     def __repr__(self):
