@@ -16,6 +16,7 @@ from urllib.parse import urljoin
 from urllib.request import Request
 from urllib.request import urlopen
 
+from ochazuke import create_app
 from ochazuke.models import db
 from ochazuke.models import IssuesCount
 
@@ -87,27 +88,29 @@ def main():
     # Compute the date
     now = newtime(datetime.datetime.now().isoformat(timespec='seconds'))
 
-    # Store data in the database
-    iss_count = IssuesCount(
-        timestamp=now,
-        count=issues_count,
-        milestone=milestone)
-    db.session.add(iss_count)
-    try:
-        db.session.commit()
-        msg = ("Successfully wrote MILESTONE {milestone} count for {now} "
-               "to IssuesCount table.").format(
-            milestone=milestone,
-            now=now)
-        LOGGER.info(msg)
-    # Catch error and attempt to recover by resetting staged changes.
-    except sqlalchemy.exc.SQLAlchemyError as error:
-        db.session.rollback()
-        msg = ("Yikes! Failed to write MILESTONE {milestone} count for {now} "
-               "in IssuesCount table.").format(
-            milestone=milestone,
-            now=now)
-        LOGGER.warning(msg)
+    # Create an app context and store the data in the database
+    app = create_app()
+    with app.app_context():
+        iss_count = IssuesCount(
+            timestamp=now,
+            count=issues_count,
+            milestone=milestone)
+        db.session.add(iss_count)
+        try:
+            db.session.commit()
+            msg = ("Successfully wrote MILESTONE {milestone} count for {now} "
+                   "to IssuesCount table.").format(
+                milestone=milestone,
+                now=now)
+            LOGGER.info(msg)
+        # Catch error and attempt to recover by resetting staged changes.
+        except sqlalchemy.exc.SQLAlchemyError as error:
+            db.session.rollback()
+            msg = ("Yikes! Failed to write MILESTONE {milestone} count for "
+                   "{now} in IssuesCount table.").format(
+                milestone=milestone,
+                now=now)
+            LOGGER.warning(msg)
 
 
 if __name__ == "__main__":
