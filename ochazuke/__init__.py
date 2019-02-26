@@ -15,6 +15,7 @@ from flask import Response
 
 from ochazuke.helpers import get_json_slice
 from ochazuke.helpers import is_valid_args
+from ochazuke.helpers import normalize_date_range
 from tools.helpers import get_remote_data
 from ochazuke.models import db
 from ochazuke.models import IssuesCount
@@ -103,11 +104,12 @@ def create_app(test_config=None):
     def needsdiagnosis_from_db():
         """Test route that queries database to serve data to client."""
         if is_valid_args(request.args):
+            date_pair = normalize_date_range(
+                request.args.get('from'), request.args.get('to'))
             needsdiagnosis_data = IssuesCount.query.filter_by(
-                milestone="needsdiagnosis").filter(
+                milestone='needsdiagnosis').filter(
                     IssuesCount.timestamp.between(
-                        request.args.get('from'), request.args.get('to'))
-            ).all()
+                        date_pair[0], date_pair[1])).all()
             timeline = []
             for item in needsdiagnosis_data:
                 hourly_count = dict(
