@@ -8,6 +8,7 @@
 
 import os
 import logging
+import json
 
 from flask import Flask
 from flask import request
@@ -106,17 +107,17 @@ def create_app(test_config=None):
         if is_valid_args(request.args):
             date_pair = normalize_date_range(
                 request.args.get('from'), request.args.get('to'))
-            with app.app_context():
-                needsdiagnosis_data = IssuesCount.query.filter_by(
-                    milestone='needsdiagnosis').filter(
-                        IssuesCount.timestamp.between(
-                            date_pair[0], date_pair[1])).all()
+            needsdiagnosis_data = IssuesCount.query.filter_by(
+                milestone='needsdiagnosis').filter(
+                    IssuesCount.timestamp.between(
+                        date_pair[0], date_pair[1])).all()
             timeline = []
             for item in needsdiagnosis_data:
                 hourly_count = dict(
                     timestamp=item.timestamp.isoformat()+'Z',
                     count=item.count)
                 timeline.append(hourly_count)
+            timeline = json.dumps(timeline)
             response = Response(
                 response=timeline,
                 status=200,
