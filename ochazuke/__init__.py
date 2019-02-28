@@ -138,6 +138,6 @@ def create_app(test_config=None):
 # it will create a line with the following format
 # (2015-09-14 20:50:19) INFO: Thing_To_Log
 logging.basicConfig(format='(%(asctime)s) %(levelname)s: %(message)s',
-                    datefmt='%Y-%m-%d  % H:%M:%S %z', level=logging.INFO)
+                    datefmt='%Y-%m-%d  %H:%M:%S %z', level=logging.INFO)
 
 app = create_app()
