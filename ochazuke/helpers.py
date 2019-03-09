@@ -73,3 +73,24 @@ def is_valid_args(args):
         else:
             return True
     return False
+
+
+def normalize_date_range(from_date, to_date):
+    """Add a day to the to_date so dates are inclusive in a database query.
+
+    A date is a string 'YYYY-MM-DD'
+    A date is considered to be starting at 00:00:00.
+    An invalid date format should be ignored and return None.
+    The same from_date and to_date should return from_date.
+    """
+    date_format = '%Y-%m-%d'
+    try:
+        start = datetime.datetime.strptime(from_date, date_format)
+        end = datetime.datetime.strptime(to_date, date_format)
+    except Exception:
+        return None
+    else:
+        new_end_date = end + datetime.timedelta(days=1)
+        dates = [start.strftime(date_format), new_end_date.strftime(
+            date_format)]
+    return dates

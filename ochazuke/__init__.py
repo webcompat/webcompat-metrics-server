@@ -8,6 +8,7 @@
 
 import os
 import logging
+import json
 
 from flask import Flask
 from flask import request
@@ -15,8 +16,10 @@ from flask import Response
 
 from ochazuke.helpers import get_json_slice
 from ochazuke.helpers import is_valid_args
+from ochazuke.helpers import normalize_date_range
 from tools.helpers import get_remote_data
 from ochazuke.models import db
+from ochazuke.models import IssuesCount
 
 
 def create_app(test_config=None):
@@ -98,6 +101,34 @@ def create_app(test_config=None):
         response.headers.add('Vary', 'Origin')
         return response
 
+    @app.route('/data/needsdiagnosis-dbtest')
+    def needsdiagnosis_from_db():
+        """Test route that queries database to serve data to client."""
+        if is_valid_args(request.args):
+            date_pair = normalize_date_range(
+                request.args.get('from'), request.args.get('to'))
+            needsdiagnosis_data = IssuesCount.query.filter_by(
+                milestone='needsdiagnosis').filter(
+                    IssuesCount.timestamp.between(
+                        date_pair[0], date_pair[1])).all()
+            timeline = []
+            for item in needsdiagnosis_data:
+                hourly_count = dict(
+                    timestamp=item.timestamp.isoformat()+'Z',
+                    count=item.count)
+                timeline.append(hourly_count)
+            timeline = json.dumps(timeline)
+            response = Response(
+                response=timeline,
+                status=200,
+                mimetype='application/json')
+        else:
+            response = Response(status=400)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Vary', 'Origin')
+        return response
+
     return app
 
 
@@ -107,6 +138,6 @@ def create_app(test_config=None):
 # it will create a line with the following format
 # (2015-09-14 20:50:19) INFO: Thing_To_Log
 logging.basicConfig(format='(%(asctime)s) %(levelname)s: %(message)s',
-                    datefmt='%Y-%m-%d  % H:%M:%S %z', level=logging.INFO)
+                    datefmt='%Y-%m-%d  %H:%M:%S %z', level=logging.INFO)
 
 app = create_app()
