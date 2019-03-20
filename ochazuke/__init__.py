@@ -117,14 +117,13 @@ def create_app(test_config=None):
                     timestamp=item.timestamp.isoformat()+'Z',
                     count=item.count)
                 timeline.append(hourly_count)
-            timeline = json.dumps(timeline)
             response_object = {
                 'about': 'Hourly NeedsDiagnosis issues count',
                 'date_format': 'w3c',
                 'timeline': timeline
             }
             response = Response(
-                response=response_object,
+                response=json.dumps(response_object),
                 status=200,
                 mimetype='application/json')
         else:
