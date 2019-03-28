@@ -153,7 +153,7 @@ def create_app(test_config=None):
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         response.headers.add('Vary', 'Origin')
         return response
-    
+
     @app.route('/data/needscontact-timeline')
     def needscontact_data():
         """Dumb pipeline for returning the JSON."""
@@ -174,7 +174,7 @@ def create_app(test_config=None):
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         response.headers.add('Vary', 'Origin')
         return response
-    
+
     @app.route('/data/sitewait-timeline')
     def sitewait_data():
         """Dumb pipeline for returning the JSON."""
