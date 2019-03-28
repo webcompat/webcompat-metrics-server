@@ -133,6 +133,69 @@ def create_app(test_config=None):
         response.headers.add('Vary', 'Origin')
         return response
 
+    @app.route('/data/needstriage-timeline')
+    def needstriage_data():
+        """Dumb pipeline for returning the JSON."""
+        # TODO: Change this to a database query.
+        json_data = get_remote_data(
+            'http://laghee.pythonanywhere.com/tmp/needstriage_timeline')
+        if is_valid_args(request.args):
+            json_data = get_json_slice(
+                json_data,
+                request.args.get('from'),
+                request.args.get('to')
+            )
+        response = Response(
+            response=json_data,
+            status=200,
+            mimetype='application/json')
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Vary', 'Origin')
+        return response
+
+    @app.route('/data/needscontact-timeline')
+    def needscontact_data():
+        """Dumb pipeline for returning the JSON."""
+        # TODO: Change this to a database query.
+        json_data = get_remote_data(
+            'http://laghee.pythonanywhere.com/tmp/needscontact_timeline')
+        if is_valid_args(request.args):
+            json_data = get_json_slice(
+                json_data,
+                request.args.get('from'),
+                request.args.get('to')
+            )
+        response = Response(
+            response=json_data,
+            status=200,
+            mimetype='application/json')
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Vary', 'Origin')
+        return response
+
+    @app.route('/data/sitewait-timeline')
+    def sitewait_data():
+        """Dumb pipeline for returning the JSON."""
+        # TODO: Change this to a database query.
+        json_data = get_remote_data(
+            'http://laghee.pythonanywhere.com/tmp/sitewait_timeline')
+        if is_valid_args(request.args):
+            json_data = get_json_slice(
+                json_data,
+                request.args.get('from'),
+                request.args.get('to')
+            )
+        response = Response(
+            response=json_data,
+            status=200,
+            mimetype='application/json')
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Vary', 'Origin')
+        return response
+
     return app
 
 
