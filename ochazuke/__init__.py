@@ -196,6 +196,20 @@ def create_app(test_config=None):
         response.headers.add('Vary', 'Origin')
         return response
 
+    @app.route('/data/triage-bugs')
+    def triage_bugs():
+        """Returns the list of issues which are currently in triage."""
+        url = 'https://api.github.com/repos/webcompat/webcompat-tests/issues?sort=created&per_page=100&direction=asc&milestone=1'  # noqa
+        json_data = get_remote_data(url)
+        response = Response(
+            response=json_data,
+            status=200,
+            mimetype='application/json')
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Vary', 'Origin')
+        return response
+
     return app
 
 
