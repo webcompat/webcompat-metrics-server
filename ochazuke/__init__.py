@@ -199,7 +199,7 @@ def create_app(test_config=None):
     @app.route('/data/triage-bugs')
     def triage_bugs():
         """Returns the list of issues which are currently in triage."""
-        url = 'https://api.github.com/repos/webcompat/webcompat-tests/issues?sort=created&per_page=100&direction=asc&milestone=1'  # noqa
+        url = 'https://api.github.com/repos/webcompat/web-bugs/issues?sort=created&per_page=100&direction=asc&milestone=2'  # noqa
         json_data = get_remote_data(url)
         response = Response(
             response=json_data,
