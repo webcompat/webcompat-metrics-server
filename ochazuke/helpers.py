@@ -8,7 +8,7 @@
 import datetime
 import json
 
-from ochazuke import app
+from ochazuke import logging
 from ochazuke.models import IssuesCount
 
 
@@ -112,10 +112,10 @@ def get_timeline_data(category, start, end):
     """Query the data in the DB for a defined category."""
     # Extract the list of issues
     category_issues = IssuesCount.query.filter_by(milestone=category)
-    app.logger.info(category_issues)
+    logging.info(category_issues)
     issues_list = category_issues.filter(
         IssuesCount.timestamp.between(start, end)).all()
-    app.logger.info(issues_list)
+    logging.info(issues_list)
     timeline = [{
                  'count': issue.count,
                  'timestamp': issue.timestamp.isoformat()+'Z'
