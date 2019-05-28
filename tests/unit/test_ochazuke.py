@@ -11,6 +11,7 @@ from unittest.mock import patch
 from werkzeug.datastructures import ImmutableMultiDict
 
 from ochazuke import create_app
+from ochazuke import db
 from ochazuke import helpers
 
 
@@ -47,8 +48,11 @@ class OchazukeTestCase(unittest.TestCase):
 
     def setUp(self):
         """Set up tests."""
-        self.app = create_app(test_config={})
+        self.app = create_app(test_config='testing')
+        print('CONFIG', self.app.config)
         self.client = self.app.test_client()
+        with self.app.app_context():
+            db.create_all()
 
     def test_index(self):
         """Test the index page."""

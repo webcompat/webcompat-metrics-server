@@ -19,12 +19,17 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    SECRET_KEY = 'dev'
-
 
 class TestConfig(Config):
     """Special class for testing purpose"""
+    SECRET_KEY = 'dev'
     TESTING = True
     FLASK_DEBUG = True
     # Database
-    SQLALCHEMY_DATABASE_URI = 'postgres://localhost/metrics'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+
+app_config = {
+    'development': TestConfig,
+    'testing': TestConfig,
+    'production': Config,
+}
