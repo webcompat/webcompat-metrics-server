@@ -10,12 +10,15 @@ import os
 import logging
 import json
 
+from flask import abort
 from flask import Flask
 from flask import request
 from flask import Response
 
 from ochazuke.helpers import get_json_slice
+from ochazuke.helpers import get_timeline_data
 from ochazuke.helpers import is_valid_args
+from ochazuke.helpers import is_valid_category
 from ochazuke.helpers import normalize_date_range
 from tools.helpers import get_remote_data
 from ochazuke.models import db
@@ -60,27 +63,6 @@ def create_app(test_config=None):
         """Home page of the site"""
         return 'Welcome to ochazuke'
 
-    @app.route('/data/needsdiagnosis-timeline')
-    def needsdiagnosis_data():
-        """Dumb pipeline for returning the JSON."""
-        # TODO: Change this to a local file.
-        json_data = get_remote_data(
-            'http://www.la-grange.net/tmp/needsdiagnosis-timeline.json')
-        if is_valid_args(request.args):
-            json_data = get_json_slice(
-                json_data,
-                request.args.get('from'),
-                request.args.get('to')
-            )
-        response = Response(
-            response=json_data,
-            status=200,
-            mimetype='application/json')
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Vary', 'Origin')
-        return response
-
     @app.route('/data/weekly-counts')
     def weekly_reports_data():
         """Secondhand pipeline for returning weekly JSON data."""
@@ -101,94 +83,30 @@ def create_app(test_config=None):
         response.headers.add('Vary', 'Origin')
         return response
 
-    @app.route('/data/needsdiagnosis-dbtest')
-    def needsdiagnosis_from_db():
-        """Test route that queries database to serve data to client."""
-        if is_valid_args(request.args):
-            date_pair = normalize_date_range(
-                request.args.get('from'), request.args.get('to'))
-            needsdiagnosis_data = IssuesCount.query.filter_by(
-                milestone='needsdiagnosis').filter(
-                    IssuesCount.timestamp.between(
-                        date_pair[0], date_pair[1])).all()
-            timeline = []
-            for item in needsdiagnosis_data:
-                hourly_count = dict(
-                    timestamp=item.timestamp.isoformat()+'Z',
-                    count=item.count)
-                timeline.append(hourly_count)
-            response_object = {
-                'about': 'Hourly NeedsDiagnosis issues count',
-                'date_format': 'w3c',
-                'timeline': timeline
-            }
-            response = Response(
-                response=json.dumps(response_object),
-                status=200,
-                mimetype='application/json')
-        else:
-            response = Response(status=400)
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Vary', 'Origin')
-        return response
-
-    @app.route('/data/needstriage-timeline')
-    def needstriage_data():
-        """Dumb pipeline for returning the JSON."""
-        # TODO: Change this to a database query.
-        json_data = get_remote_data(
-            'http://laghee.pythonanywhere.com/tmp/needstriage_timeline')
-        if is_valid_args(request.args):
-            json_data = get_json_slice(
-                json_data,
-                request.args.get('from'),
-                request.args.get('to')
-            )
+    @app.route('/data/<category>-timeline')
+    def issues_count_data(category):
+        """Route for issues count."""
+        if not is_valid_category(category):
+            abort(404)
+        if not request.args:
+            abort(404)
+        if not is_valid_args(request.args):
+            abort(404)
+        # Extract the dates
+        from_date = request.args.get('from')
+        to_date = request.args.get('to')
+        start, end = normalize_date_range(from_date, to_date)
+        # Grab the data
+        timeline = get_timeline_data(category, start, end)
+        # Prepare the response
+        about = 'Hourly {category} issues count'.format(category=category)
+        response_object = {
+            'about': about,
+            'date_format': 'w3c',
+            'timeline': timeline
+        }
         response = Response(
-            response=json_data,
-            status=200,
-            mimetype='application/json')
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Vary', 'Origin')
-        return response
-
-    @app.route('/data/needscontact-timeline')
-    def needscontact_data():
-        """Dumb pipeline for returning the JSON."""
-        # TODO: Change this to a database query.
-        json_data = get_remote_data(
-            'http://laghee.pythonanywhere.com/tmp/needscontact_timeline')
-        if is_valid_args(request.args):
-            json_data = get_json_slice(
-                json_data,
-                request.args.get('from'),
-                request.args.get('to')
-            )
-        response = Response(
-            response=json_data,
-            status=200,
-            mimetype='application/json')
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Vary', 'Origin')
-        return response
-
-    @app.route('/data/sitewait-timeline')
-    def sitewait_data():
-        """Dumb pipeline for returning the JSON."""
-        # TODO: Change this to a database query.
-        json_data = get_remote_data(
-            'http://laghee.pythonanywhere.com/tmp/sitewait_timeline')
-        if is_valid_args(request.args):
-            json_data = get_json_slice(
-                json_data,
-                request.args.get('from'),
-                request.args.get('to')
-            )
-        response = Response(
-            response=json_data,
+            response=json.dumps(response_object),
             status=200,
             mimetype='application/json')
         response.headers.add('Access-Control-Allow-Origin', '*')
