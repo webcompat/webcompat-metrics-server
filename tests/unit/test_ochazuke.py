@@ -28,7 +28,7 @@ DATA = [{"count": "485", "timestamp": "2018-05-15T01:00:00Z"},
 DATA2 = [{"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
          {"count": "485", "timestamp": "2018-05-17T03:00:00Z"},
          {"count": "485", "timestamp": "2018-05-18T04:00:00Z"},
-        ]
+         ]
 
 WEEKLY_DATA = {
     "2015": [9, 7, 46],
@@ -54,7 +54,6 @@ class OchazukeTestCase(unittest.TestCase):
         """Test the index page."""
         rv = self.client.get('/')
         self.assertIn('Welcome to ochazuke', rv.data.decode())
-
 
     @patch('ochazuke.get_remote_data')
     def test_weeklydata(self, mock_get):

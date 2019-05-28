@@ -107,9 +107,10 @@ def main():
         except sqlalchemy.exc.SQLAlchemyError as error:
             db.session.rollback()
             msg = ("Yikes! Failed to write MILESTONE {milestone} count for "
-                   "{now} in IssuesCount table.").format(
+                   "{now} in IssuesCount table. {error}").format(
                 milestone=milestone,
-                now=now)
+                now=now,
+                error=error)
             LOGGER.warning(msg)
 
 

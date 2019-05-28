@@ -22,7 +22,6 @@ from ochazuke.helpers import is_valid_category
 from ochazuke.helpers import normalize_date_range
 from tools.helpers import get_remote_data
 from ochazuke.models import db
-from ochazuke.models import IssuesCount
 
 
 def create_app(test_config=None):

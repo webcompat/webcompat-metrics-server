@@ -8,6 +8,8 @@
 import datetime
 import json
 
+from ochazuke.models import IssuesCount
+
 
 def get_days(from_date, to_date):
     """Create the list of dates spanning two dates.
