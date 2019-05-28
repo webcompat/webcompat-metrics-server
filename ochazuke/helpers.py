@@ -111,10 +111,10 @@ def normalize_date_range(from_date, to_date):
 def get_timeline_data(category, start, end):
     """Query the data in the DB for a defined category."""
     # Extract the list of issues
+    date_range = IssuesCount.timestamp.between(start, end)
     category_issues = IssuesCount.query.filter_by(milestone=category)
     logging.info(category_issues)
-    issues_list = category_issues.filter(
-        IssuesCount.timestamp.between(start, end)).all()
+    issues_list = category_issues.filter(date_range).all()
     logging.info(issues_list)
     timeline = [{
                  'count': issue.count,
