@@ -25,6 +25,11 @@ DATA = [{"count": "485", "timestamp": "2018-05-15T01:00:00Z"},
         {"count": "485", "timestamp": "2018-05-18T04:00:00Z"},
         ]
 
+DATA2 = [{"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
+         {"count": "485", "timestamp": "2018-05-17T03:00:00Z"},
+         {"count": "485", "timestamp": "2018-05-18T04:00:00Z"},
+        ]
+
 WEEKLY_DATA = {
     "2015": [9, 7, 46],
     "2016": [11, 19, 28],
@@ -50,25 +55,6 @@ class OchazukeTestCase(unittest.TestCase):
         rv = self.client.get('/')
         self.assertIn('Welcome to ochazuke', rv.data.decode())
 
-    @patch('ochazuke.get_remote_data')
-    def test_needsdiagnosis(self, mock_get):
-        """/data/needsdiagnosis-timeline sends back JSON."""
-        TIMELINE['timeline'] = DATA
-        mock_get.return_value = mocked_json(TIMELINE)
-        rv = self.client.get('/data/needsdiagnosis-timeline')
-        self.assertIn(
-            '"about": "Hourly NeedsDiagnosis issues count"',
-            rv.data.decode())
-        self.assertEqual(rv.status_code, 200)
-        self.assertEqual(rv.mimetype, 'application/json')
-        self.assertTrue('Access-Control-Allow-Origin' in rv.headers.keys())
-        self.assertEqual('*', rv.headers['Access-Control-Allow-Origin'])
-        self.assertTrue('Vary' in rv.headers.keys())
-        self.assertEqual('Origin', rv.headers['Vary'])
-        self.assertTrue(
-            'Access-Control-Allow-Credentials' in rv.headers.keys())
-        self.assertEqual('true',
-                         rv.headers['Access-Control-Allow-Credentials'])
 
     @patch('ochazuke.get_remote_data')
     def test_weeklydata(self, mock_get):
@@ -87,45 +73,43 @@ class OchazukeTestCase(unittest.TestCase):
         self.assertEqual('true',
                          rv.headers['Access-Control-Allow-Credentials'])
 
-    @patch('ochazuke.get_remote_data')
-    def test_needsdiagnosis_valid_param(self, mock_get):
+    @patch('ochazuke.get_timeline_data')
+    def test_needsdiagnosis_valid_param(self, mock_timeline):
         """Valid parameters on /needsdiagnosis-timeline."""
-        TIMELINE['timeline'] = DATA
-        mock_get.return_value = mocked_json(TIMELINE)
+        mock_timeline.return_value = DATA2
         url = '/data/needsdiagnosis-timeline?from=2018-05-16&to=2018-05-18'
         rv = self.client.get(url)
         self.assertIn(
             '{"count": "485", "timestamp": "2018-05-17T03:00:00Z"}',
             rv.data.decode())
-        self.assertNotIn(
-            '{"count": "485", "timestamp": "2018-05-15T01:00:00Z"}',
+        self.assertIn(
+            '"about": "Hourly needsdiagnosis issues count"',
             rv.data.decode())
+        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(rv.mimetype, 'application/json')
+        self.assertTrue('Access-Control-Allow-Origin' in rv.headers.keys())
+        self.assertEqual('*', rv.headers['Access-Control-Allow-Origin'])
+        self.assertTrue('Vary' in rv.headers.keys())
+        self.assertEqual('Origin', rv.headers['Vary'])
+        self.assertTrue(
+            'Access-Control-Allow-Credentials' in rv.headers.keys())
+        self.assertEqual('true',
+                         rv.headers['Access-Control-Allow-Credentials'])
 
-    @patch('ochazuke.get_remote_data')
-    def test_needsdiagnosis_invalid_param(self, mock_get):
+    def test_needsdiagnosis_without_params(self):
+        """/data/needsdiagnosis-timeline without params fail."""
+        rv = self.client.get('/data/needsdiagnosis-timeline')
+        self.assertEqual(rv.status_code, 404)
+
+    def test_needsdiagnosis_invalid_param(self):
         """Ignore invalid parameters on /needsdiagnosis-timeline."""
-        TIMELINE['timeline'] = DATA
-        mock_get.return_value = mocked_json(TIMELINE)
         rv = self.client.get('/data/needsdiagnosis-timeline?blah=foo')
-        self.assertIn(
-            '{"count": "485", "timestamp": "2018-05-15T01:00:00Z"}',
-            rv.data.decode())
-        self.assertIn(
-            '{"count": "485", "timestamp": "2018-05-18T04:00:00Z"}',
-            rv.data.decode())
+        self.assertEqual(rv.status_code, 404)
 
-    @patch('ochazuke.get_remote_data')
-    def test_needsdiagnosis_invalid_param_values(self, mock_get):
+    def test_needsdiagnosis_invalid_param_values(self):
         """Ignore invalid parameters values on /needsdiagnosis-timeline."""
-        TIMELINE['timeline'] = DATA
-        mock_get.return_value = mocked_json(TIMELINE)
         rv = self.client.get('/data/needsdiagnosis-timeline?from=foo&to=bar')
-        self.assertIn(
-            '{"count": "485", "timestamp": "2018-05-15T01:00:00Z"}',
-            rv.data.decode())
-        self.assertIn(
-            '{"count": "485", "timestamp": "2018-05-18T04:00:00Z"}',
-            rv.data.decode())
+        self.assertEqual(rv.status_code, 404)
 
     def test_date_range(self):
         """Given from_date and to_date, return a list of days."""
@@ -170,6 +154,18 @@ class OchazukeTestCase(unittest.TestCase):
             [('bar', 'foo')])))
         self.assertFalse(helpers.is_valid_args(ImmutableMultiDict(
             [('from', 'bar'), ('to', 'foo')])))
+
+    def test_normalize_date_range(self):
+        """Test dates normalization."""
+        self.assertEqual(
+            helpers.normalize_date_range('2019-01-01', '2019-01-03'),
+            ('2019-01-01', '2019-01-04'))
+        self.assertEqual(
+            helpers.normalize_date_range('not_date', '2019-01-03'),
+            None)
+        self.assertEqual(
+            helpers.normalize_date_range('2019-01-01', '2019-01-01'),
+            ('2019-01-01', '2019-01-02'))
 
 
 if __name__ == '__main__':
