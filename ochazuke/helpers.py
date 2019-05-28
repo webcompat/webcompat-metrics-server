@@ -112,10 +112,11 @@ def get_timeline_data(category, start, end):
     """Query the data in the DB for a defined category."""
     # Extract the list of issues
     date_range = IssuesCount.timestamp.between(start, end)
+    logging.info('DATE_RANGE {}'.format(date_range))
     category_issues = IssuesCount.query.filter_by(milestone=category)
-    logging.info(category_issues)
+    logging.info('CATEGORY {}'.format(category_issues))
     issues_list = category_issues.filter(date_range).all()
-    logging.info(issues_list)
+    logging.info('ISSUES {}'.format(issues_list))
     timeline = [{
                  'count': issue.count,
                  'timestamp': issue.timestamp.isoformat()+'Z'
