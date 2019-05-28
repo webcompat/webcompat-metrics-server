@@ -8,6 +8,7 @@
 import datetime
 import json
 
+from ochazuke import app
 from ochazuke.models import IssuesCount
 
 
