@@ -5,6 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """Main testing module for Webcompat Metrics Server."""
 import json
+import os
 import unittest
 from unittest.mock import patch
 
@@ -41,6 +42,16 @@ WEEKLY_DATA = {
 def mocked_json(expected_data):
     """Prepare a json response when fed a dictionary."""
     return json.dumps(expected_data)
+
+
+def json_data(filename):
+    """Return a tuple with the content and its signature."""
+    current_root = os.path.realpath(os.curdir)
+    fixtures_path = 'tests/fixtures'
+    path = os.path.join(current_root, fixtures_path, filename)
+    with open(path, 'r') as f:
+        json_event = json.dumps(json.load(f))
+    return json_event
 
 
 class OchazukeTestCase(unittest.TestCase):
@@ -87,6 +98,25 @@ class OchazukeTestCase(unittest.TestCase):
             rv.data.decode())
         self.assertIn(
             '"about": "Hourly needsdiagnosis issues count"',
+            rv.data.decode())
+        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(rv.mimetype, 'application/json')
+        self.assertTrue('Access-Control-Allow-Origin' in rv.headers.keys())
+        self.assertEqual('*', rv.headers['Access-Control-Allow-Origin'])
+        self.assertTrue('Vary' in rv.headers.keys())
+        self.assertEqual('Origin', rv.headers['Vary'])
+        self.assertTrue(
+            'Access-Control-Allow-Credentials' in rv.headers.keys())
+        self.assertEqual('true',
+                         rv.headers['Access-Control-Allow-Credentials'])
+
+    @patch('ochazuke.get_remote_data')
+    def test_triage_stats(self, mock_get):
+        """/data/triage-bugs sends back JSON."""
+        mock_get.return_value = json_data('triage.json')
+        rv = self.client.get('/data/triage-bugs')
+        self.assertIn(
+            '"title": "example.org - dashboard test"',
             rv.data.decode())
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(rv.mimetype, 'application/json')
