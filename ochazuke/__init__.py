@@ -7,39 +7,37 @@
 """Create Ochazuke: the webcompat-metrics-server Flask application."""
 
 import logging
-import os
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+
+from config import config
 
 
 db = SQLAlchemy()
 
 
-def create_app(test_config=None):
+def create_app(config_name):
     """Create the main webcompat metrics server app."""
     # create and configure the app
-    app = Flask(__name__, instance_relative_config=False)
-
-    if test_config is None:
-        # load the instance config, if it exists, when not testing
-        app.config.from_object('config.Config')
-    else:
-        # load the test config if passed in
-        app.config.from_object('config.TestConfig')
-    # ensure the instance folder exists
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
-    # Initialize the DB
+    app = Flask(__name__)
+    app.config.from_object(config[config_name])
+    config[config_name].init_app(app)
+    # DB init
     db.init_app(app)
-    # Start the app context
-    with app.app_context():
-        from ochazuke import routes  # noqa
-        db.create_all()
+    # Blueprint
+    configure_blueprints(app)
     return app
 
+
+def configure_blueprints(app):
+    """Define the blueprints for the project."""
+    # Web views for humans
+    from ochazuke.web import web_blueprint
+    app.register_blueprint(web_blueprint)
+    # Views for API clients
+    from ochazuke.api import api_blueprint
+    app.register_blueprint(api_blueprint, url_prefix='/data')
 
 # Logging Capabilities
 # To benefit from the logging, you may want to add:
@@ -48,5 +46,3 @@ def create_app(test_config=None):
 # (2015-09-14 20:50:19) INFO: Thing_To_Log
 logging.basicConfig(format='(%(asctime)s) %(levelname)s: %(message)s',
                     datefmt='%Y-%m-%d  %H:%M:%S %z', level=logging.INFO)
-
-app = create_app()
