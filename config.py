@@ -10,26 +10,43 @@ import os
 
 class Config:
     """Set Flask configuration vars from .env file."""
-
     # General
     TESTING = False
     FLASK_DEBUG = False
 
+    @staticmethod
+    def init_app(app):
+        pass
+
+
+class DevelopmentConfig(Config):
+    """Special class for development purpose"""
+    # export FLASK_ENV=development
+    # on your local computer
+    DEBUG = True
     # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URL = os.environ.get('DEV_DATABASE_URL')
+
+
+class TestingConfig(Config):
+    """Special class for testing purpose"""
+    TESTING = True
+    DEBUG = True
+    FLASK_DEBUG = True
+    # Database
+    SQLALCHEMY_DATABASE_URL = os.environ.get('TEST_DATABASE_URL') or 'sqlite://'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
-class TestConfig(Config):
-    """Special class for testing purpose"""
-    SECRET_KEY = 'dev'
-    TESTING = True
-    FLASK_DEBUG = True
-    # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+class ProductionConfig(Config):
+    """Production Ready Config."""
+    SQLALCHEMY_DATABASE_URL = os.environ.get('DATABASE_URL')
 
-app_config = {
-    'development': TestConfig,
-    'testing': TestConfig,
-    'production': Config,
+
+config = {
+    'development': DevelopmentConfig,
+    'testing': TestingConfig,
+    'production': ProductionConfig,
+    # Secure Fallback
+    'default': DevelopmentConfig,
 }
