@@ -34,7 +34,7 @@ class TestingConfig(Config):
     DEBUG = True
     FLASK_DEBUG = True
     # Database
-    SQLALCHEMY_DATABASE_URL = os.environ.get('TEST_DATABASE_URL') or 'sqlite://'
+    SQLALCHEMY_DATABASE_URL = os.environ.get('TEST_DATABASE_URL') or 'sqlite://'  # noqa
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 

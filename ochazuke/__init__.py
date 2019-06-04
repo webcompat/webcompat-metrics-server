@@ -39,6 +39,7 @@ def configure_blueprints(app):
     from ochazuke.api import api_blueprint
     app.register_blueprint(api_blueprint, url_prefix='/data')
 
+
 # Logging Capabilities
 # To benefit from the logging, you may want to add:
 #   app.logger.info(Thing_To_Log)

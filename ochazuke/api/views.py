@@ -21,7 +21,6 @@ from ochazuke.helpers import normalize_date_range
 from tools.helpers import get_remote_data
 
 
-
 @api_blueprint.route('/weekly-counts')
 def weekly_reports_data():
     """Secondhand pipeline for returning weekly JSON data."""
