@@ -25,7 +25,7 @@ class DevelopmentConfig(Config):
     # on your local computer
     DEBUG = True
     # Database
-    SQLALCHEMY_DATABASE_URL = os.environ.get('DEV_DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL')
 
 
 class TestingConfig(Config):
@@ -34,7 +34,7 @@ class TestingConfig(Config):
     DEBUG = True
     FLASK_DEBUG = True
     # Database
-    SQLALCHEMY_DATABASE_URL = os.environ.get('TEST_DATABASE_URL') or 'sqlite://'  # noqa
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or 'sqlite://'  # noqa
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
@@ -42,7 +42,7 @@ class ProductionConfig(Config):
     """Production Ready Config."""
     TESTING = False
     DEBUG = False
-    SQLALCHEMY_DATABASE_URL = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
