@@ -40,7 +40,12 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     """Production Ready Config."""
+    TESTING = False
+    DEBUG = False
     SQLALCHEMY_DATABASE_URL = os.environ.get('DATABASE_URL')
+    @classmethod
+    def init_app(cls, app):
+        Config.init_app(app)
 
 
 config = {
