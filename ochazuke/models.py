@@ -17,7 +17,7 @@ class DailyTotal(db.Model):
     * a day representing the date that corresponds to the total
     * a count of the issues filed on this date
     """
-    __tablename__ = 'dayly_total'
+    __tablename__ = 'daily_total'
     id = db.Column(db.Integer, primary_key=True)
     day = db.Column(db.DateTime, nullable=False)
     count = db.Column(db.Integer, nullable=False)
