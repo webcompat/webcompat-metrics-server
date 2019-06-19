@@ -1,1 +1,1 @@
-web: gunicorn ochazuke:app
+web: gunicorn "ochazuke:create_app('production')"

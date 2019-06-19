@@ -5,9 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """Models and methods for working with the database."""
 
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+from ochazuke import db
 
 
 class DailyTotal(db.Model):
@@ -19,7 +17,7 @@ class DailyTotal(db.Model):
     * a day representing the date that corresponds to the total
     * a count of the issues filed on this date
     """
-
+    __tablename__ = 'daily_total'
     id = db.Column(db.Integer, primary_key=True)
     day = db.Column(db.DateTime, nullable=False)
     count = db.Column(db.Integer, nullable=False)
@@ -40,6 +38,7 @@ class IssuesCount(db.Model):
     * a count of the issues at this timestamp
     * a milestone representing the category it belongs to
     """
+    __tablename__ = 'issues_count'
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.DateTime, nullable=False)
     count = db.Column(db.Integer, nullable=False)

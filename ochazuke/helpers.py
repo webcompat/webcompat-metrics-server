@@ -8,6 +8,9 @@
 import datetime
 import json
 
+from ochazuke import logging
+from ochazuke.models import IssuesCount
+
 
 def get_days(from_date, to_date):
     """Create the list of dates spanning two dates.
@@ -75,6 +78,15 @@ def is_valid_args(args):
     return False
 
 
+def is_valid_category(category):
+    """Check if the category is acceptable."""
+    VALID_CATEGORY = ['needsdiagnosis', 'needstriage', 'needscontact',
+                      'sitewait']
+    if category in VALID_CATEGORY:
+        return True
+    return False
+
+
 def normalize_date_range(from_date, to_date):
     """Add a day to the to_date so dates are inclusive in a database query.
 
@@ -90,7 +102,23 @@ def normalize_date_range(from_date, to_date):
     except Exception:
         return None
     else:
-        new_end_date = end + datetime.timedelta(days=1)
-        dates = [start.strftime(date_format), new_end_date.strftime(
-            date_format)]
-    return dates
+        end = end + datetime.timedelta(days=1)
+        end_date = end.strftime(date_format)
+        start_date = start.strftime(date_format)
+    return start_date, end_date
+
+
+def get_timeline_data(category, start, end):
+    """Query the data in the DB for a defined category."""
+    # Extract the list of issues
+    date_range = IssuesCount.timestamp.between(start, end)
+    logging.info('DATE_RANGE {}'.format(date_range))
+    category_issues = IssuesCount.query.filter_by(milestone=category)
+    logging.info('CATEGORY {}'.format(category_issues))
+    issues_list = category_issues.filter(date_range).all()
+    logging.info('ISSUES {}'.format(issues_list))
+    timeline = [{
+                 'count': issue.count,
+                 'timestamp': issue.timestamp.isoformat()+'Z'
+                } for issue in issues_list]
+    return timeline
