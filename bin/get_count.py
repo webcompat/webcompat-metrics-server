@@ -89,7 +89,7 @@ def main():
     now = newtime(datetime.datetime.now().isoformat(timespec='seconds'))
 
     # Create an app context and store the data in the database
-    app = create_app()
+    app = create_app('production')
     with app.app_context():
         iss_count = IssuesCount(
             timestamp=now,

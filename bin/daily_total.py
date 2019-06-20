@@ -68,7 +68,7 @@ def main():
             LOGGER.warning(msg)
             return
     # Create an app context and store the data in the database
-    app = create_app()
+    app = create_app('production')
     with app.app_context():
         total = DailyTotal(day=yesterday, count=issue_count)
         db.session.add(total)
