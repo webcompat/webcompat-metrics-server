@@ -115,7 +115,8 @@ def get_timeline_data(category, start, end):
     logging.info('DATE_RANGE {}'.format(date_range))
     category_issues = IssuesCount.query.filter_by(milestone=category)
     logging.info('CATEGORY {}'.format(category_issues))
-    issues_list = category_issues.filter(date_range).all()
+    issues_list = category_issues.filter(date_range).order_by(
+        IssuesCount.timestamp.asc()).all()
     logging.info('ISSUES {}'.format(issues_list))
     timeline = [{
                  'count': issue.count,
