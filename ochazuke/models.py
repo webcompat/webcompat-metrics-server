@@ -28,8 +28,28 @@ class DailyTotal(db.Model):
             day=self.day, count=self.count)
 
 
+class WeeklyTotal(db.Model):
+    """Define a WeeklyTotal for new issues filed.
+
+    An weekly total has:
+
+    * a unique table id
+    * a monday representing the date of the (iso) week's starting Monday
+    * a count of the issues filed during the week (Monday-Sunday)
+    """
+    __tablename__ = 'weekly_total'
+    id = db.Column(db.Integer, primary_key=True)
+    monday = db.Column(db.DateTime, nullable=False)
+    count = db.Column(db.Integer, nullable=False)
+
+    def __repr__(self):
+        """Return a representation of a WeeklyTotal."""
+        return "<WeeklyTotal for week of {monday}: {count}".format(
+            monday=self.monday, count=self.count)
+
+
 class IssuesCount(db.Model):
-    """Define a IssuesCount for milestone at a precise time.
+    """Define an IssuesCount for milestone at a precise time.
 
     An issues count has:
 
