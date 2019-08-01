@@ -31,7 +31,7 @@ def main():
         msg = ("Day of week is {} -- not Monday. "
                "Weekly count script exited.").format(weekday)
         LOGGER.warning(msg)
-        return
+        sys.exit()
     monday = today - datetime.timedelta(days=7)
     sunday = today - datetime.timedelta(days=1)
     # Put last Monday and yesterday's dates into format: 2019-01-30
