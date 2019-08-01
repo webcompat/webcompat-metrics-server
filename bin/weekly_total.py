@@ -25,6 +25,13 @@ def main():
     """Code to query DB for a week of counts, sum them, and store result."""
     # NOTE: This works as expected if script is scheduled in UTC
     today = datetime.date.today()
+    weekday = today.isoweekday()
+    if weekday != 1:
+        # If not Monday, abandon script and exit
+        msg = ("Day of week is {} -- not Monday. "
+               "Weekly count script exited.").format(weekday)
+        LOGGER.warning(msg)
+        sys.exit()
     monday = today - datetime.timedelta(days=7)
     sunday = today - datetime.timedelta(days=1)
     # Put last Monday and yesterday's dates into format: 2019-01-30
