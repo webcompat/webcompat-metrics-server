@@ -13,7 +13,7 @@ from flask import request
 from flask import Response
 
 from ochazuke.api import api_blueprint
-from ochazuke.helpers import get_json_slice
+from ochazuke.helpers import get_weekly_data
 from ochazuke.helpers import get_timeline_data
 from ochazuke.helpers import is_valid_args
 from ochazuke.helpers import is_valid_category
@@ -23,17 +23,26 @@ from tools.helpers import get_remote_data
 
 @api_blueprint.route('/weekly-counts')
 def weekly_reports_data():
-    """Secondhand pipeline for returning weekly JSON data."""
-    json_weekly_data = get_remote_data(
-        'http://laghee.pythonanywhere.com/tmp/weekly_issues')
-    if is_valid_args(request.args):
-        json_weekly_data = get_json_slice(
-            json_weekly_data,
-            request.args.get('from'),
-            request.args.get('to')
-        )
+    """Route for weekly bug reports."""
+    if not request.args:
+        abort(404)
+    if not is_valid_args(request.args):
+        abort(404)
+    # Extract the dates
+    from_date = request.args.get('from')
+    to_date = request.args.get('to')
+    # Adding the extra day for weekly reports isn't necessary, but won't hurt
+    start, end = normalize_date_range(from_date, to_date)
+    # Fetch the data
+    timeline = get_weekly_data(from_date, to_date)
+    # Prepare the response
+    response_object = {
+        'about': 'Weekly Count of New Issues Reported',
+        'numbering_of_weeks': 'ISO calendar',
+        'timeline': timeline
+    }
     response = Response(
-        response=json_weekly_data,
+        response=json.dumps(response_object),
         status=200,
         mimetype='application/json')
     response.headers.add('Access-Control-Allow-Origin', '*')

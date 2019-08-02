@@ -10,6 +10,7 @@ import json
 
 from ochazuke import logging
 from ochazuke.models import IssuesCount
+from ochazuke.models import WeeklyTotal
 
 
 def get_days(from_date, to_date):
@@ -122,4 +123,21 @@ def get_timeline_data(category, start, end):
                  'count': issue.count,
                  'timestamp': issue.timestamp.isoformat()+'Z'
                 } for issue in issues_list]
+    return timeline
+
+
+def get_weekly_data(start, end):
+    """Query the data in the DB for weekly bug counts."""
+    # Extract the list of issues
+    date_range = WeeklyTotal.monday.between(start, end)
+    msg = ('DATE_RANGE {dr}, where timestamp_1 = {t1}'
+           ' and timestamp_2 = {t2}').format(dr=date_range, t1=start, t2=end)
+    logging.info(msg)
+    reports_list = WeeklyTotal.query.filter(date_range).order_by(
+        WeeklyTotal.monday.asc()).all()
+    logging.info('REPORTS {}'.format(reports_list))
+    timeline = [{
+                 'count': report.count,
+                 'timestamp': report.monday.isoformat()+'Z'
+                } for report in reports_list]
     return timeline
