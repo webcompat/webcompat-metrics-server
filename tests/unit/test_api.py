@@ -29,11 +29,10 @@ DATA2 = [{"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
          {"count": "485", "timestamp": "2018-05-18T04:00:00Z"},
          ]
 
-WEEKLY_DATA = {
-    "2015": [9, 7, 46],
-    "2016": [11, 19, 28],
-    "2017": [35, 29, 40]
-}
+WEEKLY_DATA = [{"count": 471, "timestamp": "2019-05-20T00:00:00Z"},
+               {"count": 392, "timestamp": "2019-05-27T00:00:00Z"},
+               {"count": 407, "timestamp": "2019-06-03T00:00:00Z"}
+               ]
 
 
 def mocked_json(expected_data):
@@ -68,12 +67,16 @@ class APITestCase(unittest.TestCase):
         db.drop_all()
         self.app_context.pop()
 
-    @patch('ochazuke.api.views.get_remote_data')
+    @patch('ochazuke.api.views.get_weekly_data')
     def test_weeklydata(self, mock_get):
         """Send back on /data/weekly-counts a JSON."""
-        mock_get.return_value = mocked_json(WEEKLY_DATA)
-        rv = self.client.get('/data/weekly-counts')
-        self.assertIn('"2016": [11, 19, 28]', rv.data.decode())
+        mock_get.return_value = WEEKLY_DATA
+        rv = self.client.get(
+            '/data/weekly-counts?from=2019-05-16&to=2019-06-04')
+        self.assertIn(
+            (
+                '{"count": 392, "timestamp": "2019-05-27T00:00:00Z"}'
+            ), rv.data.decode())
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(rv.mimetype, 'application/json')
         self.assertTrue('Access-Control-Allow-Origin' in rv.headers.keys())
