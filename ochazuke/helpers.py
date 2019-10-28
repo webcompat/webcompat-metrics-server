@@ -82,7 +82,7 @@ def is_valid_args(args):
 def is_valid_category(category):
     """Check if the category is acceptable."""
     VALID_CATEGORY = ['needsdiagnosis', 'needstriage', 'needscontact',
-                      'sitewait']
+                      'contactready', 'sitewait']
     if category in VALID_CATEGORY:
         return True
     return False
