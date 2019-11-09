@@ -13,31 +13,15 @@ from ochazuke import create_app
 from ochazuke import db
 
 
-TIMELINE = {'about': 'Hourly NeedsDiagnosis issues count',
-            'date_format': 'w3c',
-            'timeline': []
-            }
-
-DATA = [{"count": "485", "timestamp": "2018-05-15T01:00:00Z"},
-        {"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
+DATA = [{"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
         {"count": "485", "timestamp": "2018-05-17T03:00:00Z"},
         {"count": "485", "timestamp": "2018-05-18T04:00:00Z"},
         ]
-
-DATA2 = [{"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
-         {"count": "485", "timestamp": "2018-05-17T03:00:00Z"},
-         {"count": "485", "timestamp": "2018-05-18T04:00:00Z"},
-         ]
 
 WEEKLY_DATA = [{"count": 471, "timestamp": "2019-05-20T00:00:00Z"},
                {"count": 392, "timestamp": "2019-05-27T00:00:00Z"},
                {"count": 407, "timestamp": "2019-06-03T00:00:00Z"}
                ]
-
-
-def mocked_json(expected_data):
-    """Prepare a json response when fed a dictionary."""
-    return json.dumps(expected_data)
 
 
 def json_data(filename):
@@ -91,7 +75,7 @@ class APITestCase(unittest.TestCase):
     @patch('ochazuke.api.views.get_timeline_data')
     def test_needsdiagnosis_valid_param(self, mock_timeline):
         """Valid parameters on /needsdiagnosis-timeline."""
-        mock_timeline.return_value = DATA2
+        mock_timeline.return_value = DATA
         url = '/data/needsdiagnosis-timeline?from=2018-05-16&to=2018-05-18'
         rv = self.client.get(url)
         self.assertIn(
