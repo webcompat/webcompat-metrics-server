@@ -4,8 +4,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """Main testing module for Webcompat Metrics Server."""
-import json
-import os
 import unittest
 
 from werkzeug.datastructures import ImmutableMultiDict
@@ -14,42 +12,11 @@ from ochazuke import create_app
 from ochazuke import helpers
 
 
-TIMELINE = {'about': 'Hourly NeedsDiagnosis issues count',
-            'date_format': 'w3c',
-            'timeline': []
-            }
-
 DATA = [{"count": "485", "timestamp": "2018-05-15T01:00:00Z"},
         {"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
         {"count": "485", "timestamp": "2018-05-17T03:00:00Z"},
         {"count": "485", "timestamp": "2018-05-18T04:00:00Z"},
         ]
-
-DATA2 = [{"count": "485", "timestamp": "2018-05-16T02:00:00Z"},
-         {"count": "485", "timestamp": "2018-05-17T03:00:00Z"},
-         {"count": "485", "timestamp": "2018-05-18T04:00:00Z"},
-         ]
-
-WEEKLY_DATA = {
-    "2015": [9, 7, 46],
-    "2016": [11, 19, 28],
-    "2017": [35, 29, 40]
-}
-
-
-def mocked_json(expected_data):
-    """Prepare a json response when fed a dictionary."""
-    return json.dumps(expected_data)
-
-
-def json_data(filename):
-    """Return a tuple with the content and its signature."""
-    current_root = os.path.realpath(os.curdir)
-    fixtures_path = 'tests/fixtures'
-    path = os.path.join(current_root, fixtures_path, filename)
-    with open(path, 'r') as f:
-        json_event = json.dumps(json.load(f))
-    return json_event
 
 
 class HelpersTestCase(unittest.TestCase):
