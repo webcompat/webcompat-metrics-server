@@ -8,6 +8,7 @@
 import json
 
 from flask import abort
+
 # from flask import current_app as app
 from flask import request
 from flask import Response
@@ -21,7 +22,7 @@ from ochazuke.helpers import normalize_date_range
 from tools.helpers import get_remote_data
 
 
-@api_blueprint.route('/weekly-counts')
+@api_blueprint.route("/weekly-counts")
 def weekly_reports_data():
     """Route for weekly bug reports."""
     if not request.args:
@@ -29,29 +30,28 @@ def weekly_reports_data():
     if not is_valid_args(request.args):
         abort(404)
     # Extract the dates
-    from_date = request.args.get('from')
-    to_date = request.args.get('to')
+    from_date = request.args.get("from")
+    to_date = request.args.get("to")
     # Adding the extra day for weekly reports isn't necessary, but won't hurt
     start, end = normalize_date_range(from_date, to_date)
     # Fetch the data
     timeline = get_weekly_data(from_date, to_date)
     # Prepare the response
     response_object = {
-        'about': 'Weekly Count of New Issues Reported',
-        'numbering_of_weeks': 'ISO calendar',
-        'timeline': timeline
+        "about": "Weekly Count of New Issues Reported",
+        "numbering_of_weeks": "ISO calendar",
+        "timeline": timeline,
     }
     response = Response(
-        response=json.dumps(response_object),
-        status=200,
-        mimetype='application/json')
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    response.headers.add('Vary', 'Origin')
+        response=json.dumps(response_object), status=200, mimetype="application/json",
+    )
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.headers.add("Vary", "Origin")
     return response
 
 
-@api_blueprint.route('/<category>-timeline')
+@api_blueprint.route("/<category>-timeline")
 def issues_count_data(category):
     """Route for issues count."""
     if not is_valid_category(category):
@@ -61,38 +61,46 @@ def issues_count_data(category):
     if not is_valid_args(request.args):
         abort(404)
     # Extract the dates
-    from_date = request.args.get('from')
-    to_date = request.args.get('to')
+    from_date = request.args.get("from")
+    to_date = request.args.get("to")
     start, end = normalize_date_range(from_date, to_date)
     # Grab the data
     timeline = get_timeline_data(category, start, end)
     # Prepare the response
-    about = 'Hourly {category} issues count'.format(category=category)
+    about = "Hourly {category} issues count".format(category=category)
     response_object = {
-        'about': about,
-        'date_format': 'w3c',
-        'timeline': timeline
+        "about": about,
+        "date_format": "w3c",
+        "timeline": timeline,
     }
     response = Response(
-        response=json.dumps(response_object),
-        status=200,
-        mimetype='application/json')
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    response.headers.add('Vary', 'Origin')
+        response=json.dumps(response_object), status=200, mimetype="application/json",
+    )
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.headers.add("Vary", "Origin")
     return response
 
 
-@api_blueprint.route('/triage-bugs')
+@api_blueprint.route("/triage-bugs")
 def triage_bugs():
     """Returns the list of issues which are currently in triage."""
-    url = 'https://api.github.com/repos/webcompat/web-bugs/issues?sort=created&per_page=100&direction=asc&milestone=2'  # noqa
+    url = "https://api.github.com/repos/webcompat/web-bugs/issues?sort=created&per_page=100&direction=asc&milestone=2"  # noqa
     json_data = get_remote_data(url)
-    response = Response(
-        response=json_data,
-        status=200,
-        mimetype='application/json')
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    response.headers.add('Vary', 'Origin')
+    response = Response(response=json_data, status=200, mimetype="application/json")
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.headers.add("Vary", "Origin")
+    return response
+
+
+@api_blueprint.route("/tsci-doc")
+def tsci_doc():
+    """Returns the current ID of the spreadsheet where TSCI is calculated."""
+    url = "https://tsci.webcompat.com/currentDoc.json"  # noqa
+    json_data = get_remote_data(url)
+    response = Response(response=json_data, status=200, mimetype="application/json")
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.headers.add("Vary", "Origin")
     return response
