@@ -43,7 +43,9 @@ def weekly_reports_data():
         "timeline": timeline,
     }
     response = Response(
-        response=json.dumps(response_object), status=200, mimetype="application/json",
+        response=json.dumps(response_object),
+        status=200,
+        mimetype="application/json",
     )
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add("Access-Control-Allow-Credentials", "true")
@@ -74,7 +76,9 @@ def issues_count_data(category):
         "timeline": timeline,
     }
     response = Response(
-        response=json.dumps(response_object), status=200, mimetype="application/json",
+        response=json.dumps(response_object),
+        status=200,
+        mimetype="application/json",
     )
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add("Access-Control-Allow-Credentials", "true")
@@ -87,7 +91,9 @@ def triage_bugs():
     """Returns the list of issues which are currently in triage."""
     url = "https://api.github.com/repos/webcompat/web-bugs/issues?sort=created&per_page=100&direction=asc&milestone=2"  # noqa
     json_data = get_remote_data(url)
-    response = Response(response=json_data, status=200, mimetype="application/json")
+    response = Response(
+        response=json_data, status=200, mimetype="application/json"
+    )
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add("Access-Control-Allow-Credentials", "true")
     response.headers.add("Vary", "Origin")
@@ -99,7 +105,9 @@ def tsci_doc():
     """Returns the current ID of the spreadsheet where TSCI is calculated."""
     url = "https://tsci.webcompat.com/currentDoc.json"  # noqa
     json_data = get_remote_data(url)
-    response = Response(response=json_data, status=200, mimetype="application/json")
+    response = Response(
+        response=json_data, status=200, mimetype="application/json"
+    )
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add("Access-Control-Allow-Credentials", "true")
     response.headers.add("Vary", "Origin")
