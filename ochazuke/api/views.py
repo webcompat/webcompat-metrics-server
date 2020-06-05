@@ -13,6 +13,8 @@ from flask import abort
 from flask import request
 from flask import Response
 
+from urllib.error import HTTPError
+
 from ochazuke.api import api_blueprint
 from ochazuke.helpers import get_weekly_data
 from ochazuke.helpers import get_timeline_data
@@ -20,6 +22,7 @@ from ochazuke.helpers import is_valid_args
 from ochazuke.helpers import is_valid_category
 from ochazuke.helpers import normalize_date_range
 from tools.helpers import get_remote_data
+from tools.helpers import url_with_params
 
 
 @api_blueprint.route("/weekly-counts")
@@ -105,6 +108,31 @@ def tsci_doc():
     """Returns the current ID of the spreadsheet where TSCI is calculated."""
     url = "https://tsci.webcompat.com/currentDoc.json"  # noqa
     json_data = get_remote_data(url)
+    response = Response(
+        response=json_data, status=200, mimetype="application/json"
+    )
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.headers.add("Vary", "Origin")
+    return response
+
+
+@api_blueprint.route("/firefox-interventions")
+def firefox_interventions():
+    """Returns historical counters for Firefox Interventions."""
+    url = url_with_params(
+        "https://arewehotfixingthewebyet.com/data.json",
+        {
+            "distribution": request.args.get("distribution"),
+            "type": request.args.get("type"),
+            "start": request.args.get("start"),
+            "end": request.args.get("end")
+        }
+    )
+    try:
+        json_data = get_remote_data(url)
+    except HTTPError:
+        json_data = "[]"
     response = Response(
         response=json_data, status=200, mimetype="application/json"
     )

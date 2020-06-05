@@ -5,6 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """Some helpers for the tools section."""
 
+from urllib.parse import urlencode
 from urllib.request import Request
 from urllib.request import urlopen
 
@@ -16,3 +17,8 @@ def get_remote_data(url):
     req.add_header('Accept', 'application/json')
     json_response = urlopen(req, timeout=240).read()
     return json_response
+
+
+def url_with_params(url, params):
+    """Builds a full URL with encoded parameters."""
+    return url + "?" + urlencode(params)
