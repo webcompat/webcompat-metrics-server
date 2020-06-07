@@ -160,6 +160,24 @@ class APITestCase(unittest.TestCase):
         rv = self.client.get("/data/needsdiagnosis-timeline?from=foo&to=bar")
         self.assertEqual(rv.status_code, 404)
 
+    @patch("ochazuke.api.views.get_remote_data")
+    def firefox_interventions(self, mock_get):
+        """/data/triage-bugs sends back JSON."""
+        mock_get.return_value = json_data("firefox-interventions.json")
+        rv = self.client.get("/data/firefox-interventions?distribution=upstream&type=all&end=2020-01-01") # noqa
+        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(rv.mimetype, "application/json")
+        self.assertTrue("Access-Control-Allow-Origin" in rv.headers.keys())
+        self.assertEqual("*", rv.headers["Access-Control-Allow-Origin"])
+        self.assertTrue("Vary" in rv.headers.keys())
+        self.assertEqual("Origin", rv.headers["Vary"])
+        self.assertTrue(
+            "Access-Control-Allow-Credentials" in rv.headers.keys()
+        )
+        self.assertEqual(
+            "true", rv.headers["Access-Control-Allow-Credentials"]
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
