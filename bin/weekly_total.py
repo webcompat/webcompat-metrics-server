@@ -28,8 +28,9 @@ def main():
     weekday = today.isoweekday()
     if weekday != 1:
         # If not Monday, abandon script and exit
-        msg = ("Day of week is {} -- not Monday. "
-               "Weekly count script exited.").format(weekday)
+        msg = (
+            "Day of week is {} -- not Monday. " "Weekly count script exited."
+        ).format(weekday)
         LOGGER.warning(msg)
         sys.exit()
     monday = today - datetime.timedelta(days=7)
@@ -39,14 +40,14 @@ def main():
     sunday = sunday.isoformat()
 
     # Create an app context and store the data in the database
-    app = create_app('production')
+    app = create_app("production")
     with app.app_context():
         date_range = DailyTotal.day.between(monday, sunday)
-        LOGGER.info('MONDAY: {}'.format(monday))
-        LOGGER.info('SUNDAY: {}'.format(sunday))
-        LOGGER.info('DATE_RANGE {}'.format(date_range))
+        LOGGER.info("MONDAY: {}".format(monday))
+        LOGGER.info("SUNDAY: {}".format(sunday))
+        LOGGER.info("DATE_RANGE {}".format(date_range))
         week_list = DailyTotal.query.filter(date_range).all()
-        LOGGER.info('COUNTS FOR WEEK {}'.format(week_list))
+        LOGGER.info("COUNTS FOR WEEK {}".format(week_list))
         week_total = 0
         if not week_list:
             # On a query failure, log an error
@@ -59,15 +60,15 @@ def main():
         db.session.add(weekly_count)
         try:
             db.session.commit()
-            msg = (
-                "Successfully wrote count for {} in WeeklyTotal table."
-                ).format(monday)
+            msg_tmp = "Successfully wrote count for {} in WeeklyTotal table."
+            msg = (msg_tmp).format(monday)
             LOGGER.info(msg)
         # Catch error and attempt to recover by resetting staged changes.
         except sqlalchemy.exc.SQLAlchemyError as error:
             db.session.rollback()
-            msg = ("Yikes! Failed to write data for {week} in "
-                   "WeeklyTotal table: {err}").format(week=monday, err=error)
+            msg = (
+                "Yikes! Failed to write data for {week} in " "WeeklyTotal table: {err}"
+            ).format(week=monday, err=error)
             LOGGER.warning(msg)
 
 

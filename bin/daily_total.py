@@ -62,26 +62,26 @@ def main():
         issue_count = get_issue_count(json_response)
         if not issue_count:
             # On a second failure, log an error
-            msg = "Daily count failed for {yesterday}!".format(
-                yesterday=yesterday
-            )
+            msg = "Daily count failed for {yesterday}!".format(yesterday=yesterday)
             LOGGER.warning(msg)
             return
     # Create an app context and store the data in the database
-    app = create_app('production')
+    app = create_app("production")
     with app.app_context():
         total = DailyTotal(day=yesterday, count=issue_count)
         db.session.add(total)
         try:
             db.session.commit()
             msg = "Successfully wrote {day} data in DailyTotal table.".format(
-                count=issue_count, day=yesterday)
+                day=yesterday
+            )
             LOGGER.info(msg)
         # Catch error and attempt to recover by resetting staged changes.
         except sqlalchemy.exc.SQLAlchemyError as error:
             db.session.rollback()
-            msg = ("Yikes! Failed to write data for {day} in "
-                   "DailyTotal table: {err}").format(day=yesterday, err=error)
+            msg = (
+                "Yikes! Failed to write data for {day} in " "DailyTotal table: {err}"
+            ).format(day=yesterday, err=error)
             LOGGER.warning(msg)
 
 
