@@ -1,0 +1,5 @@
+# This is for dev purpose
+-r requirements.txt
+flake8==3.8.3
+nose2==0.9.2
+pre-commit==2.5.1

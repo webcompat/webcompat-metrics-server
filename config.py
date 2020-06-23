@@ -10,6 +10,7 @@ import os
 
 class Config:
     """Set Flask configuration vars from .env file."""
+
     # General
     TESTING = False
     FLASK_DEBUG = False
@@ -21,37 +22,41 @@ class Config:
 
 class DevelopmentConfig(Config):
     """Special class for development purpose"""
+
     # export FLASK_ENV=development
     # on your local computer
     DEBUG = True
     # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DEV_DATABASE_URL")
 
 
 class TestingConfig(Config):
     """Special class for testing purpose"""
+
     TESTING = True
     DEBUG = True
     FLASK_DEBUG = True
     # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL') or 'sqlite://'  # noqa
+    SQLALCHEMY_DATABASE_URI = os.environ.get("TEST_DATABASE_URL") or "sqlite://"  # noqa
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
 class ProductionConfig(Config):
     """Production Ready Config."""
+
     TESTING = False
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
+
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
 
 
 config = {
-    'development': DevelopmentConfig,
-    'testing': TestingConfig,
-    'production': ProductionConfig,
+    "development": DevelopmentConfig,
+    "testing": TestingConfig,
+    "production": ProductionConfig,
     # Secure Fallback
-    'default': DevelopmentConfig,
+    "default": DevelopmentConfig,
 }
