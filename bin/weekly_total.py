@@ -67,7 +67,7 @@ def main():
         except sqlalchemy.exc.SQLAlchemyError as error:
             db.session.rollback()
             msg = (
-                "Yikes! Failed to write data for {week} in " "WeeklyTotal table: {err}"
+                "Yikes! Failed to write data for {week} in WeeklyTotal table: {err}"
             ).format(week=monday, err=error)
             LOGGER.warning(msg)
 
