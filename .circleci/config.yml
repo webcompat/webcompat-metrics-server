@@ -8,7 +8,7 @@ jobs:
     docker:
       # specify the version you desire here
       # use `-browsers` prefix for selenium tests, e.g. `3.7.3-browsers`
-      - image: circleci/python:3.7.3
+      - image: circleci/python:3.9.1
         environment:
           FLASK_CONFIG: testing
           DATABASE_URL: postgresql://root@localhost/circle_test
@@ -35,7 +35,7 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install -r requirements.txt
+            pip install -r requirements-dev.txt
 
       - save_cache:
           paths:
